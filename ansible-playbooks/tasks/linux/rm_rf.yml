@@ -1,0 +1,7 @@
+# file: rm_rf.yml
+# var: paths
+#  - this var should contain a list of files or directories to remove
+---
+- name: Remove files or directories
+  file: path={{ item }} state=absent
+  with_items: paths

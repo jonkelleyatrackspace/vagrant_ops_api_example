@@ -1,0 +1,29 @@
+---
+# file: repo_play.yml
+# Copyright 2016, Jonathan Kelley  
+# License Apache Commons v2 
+
+- name: Configure `repo-n0X` vm
+  hosts: repo-n0*
+  user: vagrant
+  become: true
+  vars:
+    firewall_allowed_tcp_ports:
+      - "22"
+      - "80"
+      - "3000"
+    nginx_vhosts:
+      - listen: "80 default_server"
+        root: "/srv/repo/"
+        index: "index.html index.htm"
+        access_log: "/tmp/access.log"
+        error_log: "/tmp/error_log"
+  roles:
+    - { role: geerlingguy/nginx }
+    - { role: geerlingguy/firewall }
+  tasks:
+    - name: Configure yum repository
+      shell: id
+      become: yes
+    - include: tasks/repo/prereqs.yml
+    - include: tasks/repo/nginx_default_delete.yml

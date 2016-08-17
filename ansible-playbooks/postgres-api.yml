@@ -1,0 +1,51 @@
+---
+# file: postgres-api.yml
+# Copyright 2016, Jonathan Kelley  
+# License Apache Commons v2 
+
+#   Sets up a demo brds API.
+#   This is the server you will make requests to for your demo.
+
+- name: "PLAY: Configure `postgres-api` vm"
+  hosts: postgres-api
+  user: vagrant
+  become: true
+  vars:
+    firewall_allowed_tcp_ports:
+      - "22"
+      - "80"
+      - "3000"
+    postgresql_version: 9.3
+    postgresql_encoding: 'UTF-8'
+    postgresql_locale: 'en_US.UTF-8'
+    postgresql_admin_user: "postgres"
+    postgresql_default_auth_method: "trust"
+    postgresql_cluster_name: "main"
+    postgresql_cluster_reset: false
+    postgresql_databases:
+      - name: acme_production
+        owner: acme
+      - name: acme_staging
+        owner: acme
+    postgresql_users:
+      - name: acme
+        pass: 5ecurity0bscurity
+        encrypted: no       # denotes if the password is an md5sum
+    postgresql_user_privileges:
+      - name: acme                  # user name
+        db: acme_production
+        priv: "ALL"                 # privilege string format: example: INSERT,UPDATE/table:SELECT/anothertable:ALL
+        role_attr_flags: "CREATEDB" # role attribute flags
+      - name: acme                  # user name
+        db: acme_staging
+        priv: "ALL"                 # privilege string format: example: INSERT,UPDATE/table:SELECT/anothertable:ALL
+        role_attr_flags: "CREATEDB" # role attribute flags
+  roles:
+    - { role: ANXS/postgresql }
+  tasks:
+    - name: "TASK: Configure postgres-api demo"
+      shell: id
+      become: yes
+    - include: tasks/postgres-api/prereqs.yml
+    - include: tasks/postgres-api/software_deps.yml
+    - include: tasks/postgres-api/jojo_install.yml

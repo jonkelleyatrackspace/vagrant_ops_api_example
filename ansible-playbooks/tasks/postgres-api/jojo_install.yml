@@ -1,0 +1,26 @@
+# file: jojo_install.yml
+# Copyright 2016, Jonathan Kelley  
+# License Apache Commons v2 
+
+---
+- name: "Install pyjojo"
+  pip: name=pyjojo
+
+- name: "Build scripts root"
+  file:
+    path: /srv/pyjojo
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+    recurse: yes
+
+- name: "Copy Example Scripts"
+  copy: src=files/srv-pyjojo/ dest=/srv/pyjojo/
+
+- name: "Set Script Permissions"
+  file:
+    path: /srv/pyjojo/
+    owner: root
+    group: root
+    mode: 0755

@@ -1,0 +1,13 @@
+
+# Systemd service file
+
+[Unit]
+Description=Pyjojo
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/pyjojo --dir /srv/pyjojo 2>&1 >> /var/log/jojo.log 
+
+[Install]
+WantedBy=multi-user.target
