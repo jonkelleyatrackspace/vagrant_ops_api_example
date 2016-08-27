@@ -43,9 +43,9 @@
   roles:
     - { role: ANXS/postgresql }
   tasks:
-    - name: "TASK: Configure postgres-api demo"
+    - name: "TASK: Configuring the postgres REST API demo"
       shell: id
       become: yes
-    - include: tasks/postgres-api/prereqs.yml
+    - include: tasks/generic/prereqs.yml
     - include: tasks/postgres-api/software_deps.yml
     - include: tasks/jojo/install.yml

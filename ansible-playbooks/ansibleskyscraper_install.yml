@@ -12,8 +12,10 @@
   user: vagrant
   become: true
   tasks:
-    - name: "TASK: Configure skyscraper demo"
+    - name: "TASK: Configuring the skyscraper API-><-ANSIBLE demo"
       shell: id
       become: yes
+    - include: tasks/generic/prereqs.yml
+    - include: tasks/ansible-skyscraper/prereqs.yml
     - include: tasks/ansible-skyscraper/install_prep_ansible.yml
-    - include: tasks/jojo/install.yml
+    - include: tasks/pyjojo/install.yml
