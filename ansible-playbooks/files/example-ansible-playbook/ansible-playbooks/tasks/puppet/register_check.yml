@@ -1,0 +1,8 @@
+---
+- name: Puppet agent register check of fire and forget task
+  async_status:
+    jid: "{{ puppet_register_sleeper.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 10
+  delay: 70

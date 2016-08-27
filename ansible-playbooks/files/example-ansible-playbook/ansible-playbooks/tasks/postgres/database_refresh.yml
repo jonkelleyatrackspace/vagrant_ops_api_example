@@ -1,0 +1,410 @@
+---
+# file: tasks/postgres/database_refresh.yml
+# author: jon.kelley@rackspace.com
+# Copyright: 2016 Rackspace, Jonathan Kelley
+# License:   Apache License Version 2.0
+
+# ------------------------------------------------------
+# Objective Play-by-Play of this tasks objectives
+# ------------------------------------------------------
+#  1) Set the Source Server & Dump Metadata
+#  2) Copy dump from Source Server from dump_location
+#  3) Prepare dest_tier template database
+#  4) Scrub Template (if sql_scrub_file defined)
+#  5)  Migrate Template db to online/ACTIVE db
+#  6) Restore Database Permissions
+#  7) Post-Restore Queries (if sql_post_restore defined)
+#  8) Clean-Up
+# ------------------------------------------------------
+
+####################################################
+# Set the Source Server & Dump Metadata            #
+#  * Determine who the src_server is containing    #
+#    our notable database.                         #
+#  * Set the dump_location if origin_database is   #
+#    supplied.                                     #
+#  * Set the dump_location if copy_exact_file is   #
+#    defined.                                      #
+#  * Set the newest_dump_basename derived from the #
+#     dump_location                                #
+#    based on cluster state.                       #
+####################################################
+# pg_in_recovery = true  (is a replica)
+# pg_in_recovery = false (is a master)
+
+- name: "Set the src_server fact on the destination host by checking the hostvars of each host in this play for the in_recovery and src_tier state [scope=EVERYONE]"
+  set_fact: src_server={{ item }}
+  when: (hostvars['{{ item }}']['in_recovery'] and hostvars['{{ item }}']['tier'] == src_tier)
+    and (is_master and tier == dest_tier)
+  with_items: "{{ play_hosts }}"
+
+- debug: msg="DEBUG in_recovery={{ in_recovery }}"
+
+# Performs an ls and gets the latest dump
+- name: "REGISTER: newest_dump (latest dump) [scope=EVERYONE]"
+  tags:
+    - register_dumplocation
+  shell: ls {{ src_postgres_dump_dir }}/{{ origin_database }}* -t | head -1
+  register: newest_dump
+  when: in_recovery and origin_database != 'false'
+#...... ^^^^^^^^^^^ do not want unless it a slave.
+
+# Sets the dump loation if copy_exact_file is undefined
+# (Derived from newest_dump.stdout)
+- name: "SET_FACT: dump_location (from latest dump) [scope=SRC_PAIR]"
+  tags:
+    - register_dumplocation
+  set_fact: dump_location={{ newest_dump.stdout }}
+  when: copy_exact_file is undefined and in_recovery and tier == src_tier
+
+
+# Sets the dump loation if copy_exact_file is defined
+- name: "SET_FACT: dump_location (as copy_exact_file is defined) [scope=SRC_PAIR]"
+  tags:
+    - register_dumplocation
+  set_fact: dump_location={{ src_postgres_dump_dir }}/{{ copy_exact_file }}
+  when: copy_exact_file is defined and in_recovery and tier == src_tier
+
+# Determine the basename of the dump location path
+# (The basename is the filename without path)
+- name: "REGISTER: newest_dump_basename (The base filename from the fully qualified dump-path) [scope=SRC_PAIR]"
+  shell: basename {{ dump_location }}
+  register: newest_dump_basename
+  when: in_recovery and dump_location is defined
+
+# Set the basename fact
+- name: "SET_FACT: dump_location_basename within src scope [scope=SRC_PAIR]"
+  set_fact: dump_location_basename={{ newest_dump_basename.stdout }}
+  when: in_recovery and dump_location is defined
+
+- name: "SET_FACT: dump_location_basename within dst scope [scope=DST_PAIR]"
+  set_fact: dump_location_basename={{ hostvars[src_server]['dump_location_basename'] }}
+  when: is_master and tier == dest_tier
+
+- name: "SET_FACT: dest_postgres_dump_file (define eventual destination dump path) [scope=DST_PAIR]"
+  set_fact: dest_postgres_dump_file={{ dest_postgres_dump_dir }}{{ hostvars[src_server]['dump_location_basename'] }}
+  when: is_master and tier == dest_tier
+
+
+
+####################################################
+# Copy dump from Source Server from dump_location  #
+#  * NOTE: This command runs in the scope of the   #
+#    dest_tier on the master.                      #
+#  * This will delegate the copy comand to the src #
+#    _tier slave server.                           # 
+#  * This command shall copy the dump from the src #
+#    to the dest server.                           #
+####################################################
+
+- name: "MKDIR temp resource directory for incoming SQL dump [scope=dest]"
+  file: path={{ dest_postgres_dump_dir }} state=directory owner=postgres group=postgres mode=0770
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier and dest_postgres_dump_dir is defined
+
+- debug: msg="This host has SQL dumps at dump_location={{ dump_location }})"
+  when: dump_location is defined
+
+- debug: msg="This host is the current master at the destination tier"
+  when: is_master and tier == dest_tier
+
+# This may need some pro-explanation
+# --
+# This command runs under the context (and conditionals) of the destination master node,
+#  this command is delegated_to the source slave node. It's task is to copy from the source
+#  slave to the destination master.
+- name: "Under the context of destination master node, delegate src_server to rsync the SQL to destination (net send may take a while) [scope=SRC_PAIRtoDST_PAIR)]"
+  synchronize:
+    dest: "{{ dest_postgres_dump_dir }}"
+    mode: push
+    src: "{{ hostvars[src_server]['dump_location'] }}"
+  become: no # Has to use ci-deploys user for ssh keys
+  delegate_to: "{{ src_server }}" # Pretend this play is now run by the src server slave.
+  when: is_master and tier == dest_tier and dest_postgres_dump_dir is defined
+  tags: copy
+
+
+
+####################################################
+# Prepare dest_tier template database              #
+#  * Drop the template_db                          #
+#  * Wait 5 seconds (contention)                   #
+#  * Create template db, owner postgres            #
+#  * Import backup to the template                 #
+####################################################
+- name: "Get src_server hostname/whoami [scope=DST_PAIR]"
+  shell: echo $(hostname) $(whoami)
+  when: is_master and tier == dest_tier
+
+- fail: msg="Missing -e EXTRA_VARS key 'dest_database_template' (UNDEFINED VARIABLE)"
+  when: dest_database_template is undefined
+
+- fail: msg="err"
+  when: dest_database_template == 'postgres'
+
+- name: "DROP the template database [scope=DST_PAIR]"
+  postgresql_db:
+    name: "{{ dest_database_template }}"
+    state: absent
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier
+
+- name: "Wait 5 (seconds) (contention)"
+  pause: seconds=5
+
+- name: "CREATE the template database, default owner postgres [scope=DST_PAIR]"
+  postgresql_db:
+    name: "{{ dest_database_template }}"
+    state: present
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier
+
+- name: "Replay arrival database dump into online template database (this may take a while) [scope=DST_PAIR]"
+  shell: psql {{ dest_database_template }} < {{ dest_postgres_dump_file }}
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier
+
+
+
+####################################################
+# Scrub Template                                   #
+#  Used for compliance/sensitive tables            #
+#  * Copy scrub.sql from LOCAL to dest_tier        #
+#  * Run psql to execute sql_scrub_file            #
+####################################################
+- name: "MKDIR temp resource directory for DBA migration tasks [scope=DST_PAIR]"
+  file: path={{ dest_postgres_tmpsql_dir }} state=directory owner=postgres group=postgres mode=0770
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined and sql_scrub_file is defined
+
+- name: "Copy DBA/SQL task to Scrub/Purify temp resource directory [scope=DST_PAIR]"
+  become: yes
+  become_user: postgres
+  copy: src=files/database_refresh/{{ sql_scrub_file }} dest={{ dest_postgres_tmpsql_dir }}{{ sql_scrub_file }} owner=postgres group=postgres mode=0600
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined and sql_scrub_file is defined
+
+- name: "Execute DBA/SQL task to Scrub/Purify database (this may take a while) [scope=DST_PAIR]"
+  shell: psql -d {{ dest_database_template }} -a -f {{ dest_postgres_tmpsql_dir }}{{ sql_scrub_file }}
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined and sql_scrub_file is defined
+  no_log: True
+
+
+####################################################
+# Migrate Template db to online/ACTIVE db          #
+#  Copies doctored template to the dest_database   #
+#  * mkdir -p a ephemeral backup directory         #
+#  * Perform one-time pg_dump to ephemeral backup  #
+#    dir, stacking on top of previous backups from #
+#    previous ansible runs. This is an O CRAP, WAT #
+#    NOW sort of contigency as a one-time grace    #
+#    gesture.                                      #
+#  * Drop the dest_database                        #
+#  * Wait 5 seconds (contention)                   #
+#  * Create dest_database based off template.      #
+####################################################
+- name: "MKDIR ephemeral stacking backup directory [scope=DST_PAIR]"
+  file: path=/var/lib/pgsql/db_ephemeral_backup state=directory owner=postgres group=postgres mode=0760
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier
+
+- name: "Perform pg_dump (maxlimit=1) to contigency backup directory. (this may take a while) [scope=DST_PAIR]"
+  shell: pg_dump {{ dest_database }} > /var/lib/pgsql/db_ephemeral_backup/{{ dest_database }}.sql.back
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier
+
+- name: "SET_FACT: pgterminate_database_name=dest_database (Create VAR for pg_terminate_backend.sql.j2)"
+  set_fact: pgterminate_database_name={{ dest_database }}
+
+- name: "SET_FACT: pgterminate_database_revoke_owner=dest_database_owner (Create VAR for pg_terminate_backend.sql.j2)"
+  set_fact: pgterminate_database_revoke_owner={{ dest_database_owner }}
+
+- name: "Copy DBA/SQL task for pg_terminate_backend() [scope=DST_PAIR]"
+  template:
+    src: templates/pg_terminate_backend.sql.j2
+    dest: "{{ dest_postgres_tmpsql_dir }}/terminate_backend.sql"
+    owner: postgres
+    group: postgres
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined
+
+- name: "Execute DBA/SQL task for pg_terminate_backend() [scope=DST_PAIR]"
+  shell: psql -d {{ dest_database }} -a -f {{ dest_postgres_tmpsql_dir }}/terminate_backend.sql
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined
+  no_log: True
+
+- name: "Wait 1 second (contention)"
+  pause: seconds=1
+
+- fail: msg="Missing -e EXTRA_VARS key 'dest_database' (UNDEFINED VARIABLE)"
+  when: dest_database is undefined
+
+- fail: msg="err"
+  when: dest_database == 'postgres'
+
+- name: "DROP the target database [scope=DST_PAIR]"
+  postgresql_db:
+    name: "{{ dest_database }}"
+    state: absent
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier
+
+- name: "Wait 5 seconds (contention)"
+  pause: seconds=5
+
+#  CREATE DATABASE {{ dest_database }} WITH TEMPLATE {{ dest_database_template }} OWNER {{ dest_database_owner }};
+- name: "CREATE a scrubbed target database based off template. (this may take a while)  [scope=DST_PAIR]"
+  postgresql_db: name={{ dest_database }}
+                 template='{{ dest_database_template }}'
+                 owner={{ dest_database_owner }}
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier
+
+
+
+####################################################
+# Restore Database Permissions                     #
+#  Searches regex's for the default ownership to   #
+#   postgres and REVOKES that, and then sets the   #
+#   intended database ownership.                   #
+####################################################
+
+- name: "TOUCH DBA/SQL procedures file for restoring permissions [scope=DST_PAIR]"
+  file: path={{ dest_postgres_tmpsql_dir }}{{ dest_database }}.permissions.sql state=touch owner=postgres group=postgres mode=0770
+  become: yes
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined
+
+- name: "Performing dynamic procedures of REVOKE for `postgres` user based off dump. (this may take a while) [scope=DST_PAIR]"
+  shell: "sed -n '/^REVOKE .* ON .* FROM /p' {{ dest_postgres_dump_file }} >> {{ dest_postgres_tmpsql_dir }}{{ dest_database }}.permissions.sql"
+  args:
+    warn: false
+  when: is_master and tier == dest_tier
+
+- name: "Performing dynamic procedures of GRANT x ON y TO `dest_database_owner` based off dump. (this may take a while) [scope=DST_PAIR]"
+  shell: "sed -n '/^GRANT .* ON .* TO /p' {{ dest_postgres_dump_file }} | sed 's/postgres/{{ dest_database_owner }}/g' >> {{ dest_postgres_tmpsql_dir }}{{ dest_database }}.permissions.sql"
+  args:
+    warn: false
+  when: is_master and tier == dest_tier
+
+- name: "Performing dynamic procedures of ALTER TABLE x OWNER TO `dest_database_owner` based off dump. (this may take a while) [scope=DST_PAIR]"
+  shell: "sed -n '/^ALTER TABLE .* OWNER TO /p' {{ dest_postgres_dump_file }} | sed 's/postgres/{{ dest_database_owner }}/g' >> {{ dest_postgres_tmpsql_dir }}{{ dest_database }}.permissions.sql"
+  args:
+    warn: false
+  when: is_master and tier == dest_tier
+
+- name: "Execute DBA/SQL task of dynamic procedures for REVOKE, GRANT, ALTER TABLE OWNER statements (this may take a while)[scope=DST_PAIR]"
+  shell: psql -d {{ dest_database }} -a -f {{ dest_postgres_tmpsql_dir }}{{ dest_database }}.permissions.sql
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined
+  no_log: True
+
+- fail: msg="Missing -e EXTRA_VARS key 'dest_postgres_tmpsql_dir' (UNDEFINED VARIABLE)"
+  when: dest_postgres_tmpsql_dir is undefined
+- fail: msg="Missing -e EXTRA_VARS key 'dest_database' (UNDEFINED VARIABLE)"
+  when: dest_database is undefined
+
+- name: "Cleanup dynamic procedures file for restoring permissions [scope=DST_PAIR]"
+  file: path={{ dest_postgres_tmpsql_dir }}{{ dest_database }}.permissions.sql state=absent
+  become: yes
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined
+
+
+
+####################################################
+# Post-Restore Queries                             #
+#  Useful for trig/functs or other end-state sql   #
+#  * Copy .sql from LOCAL to dest_tier             #
+#  * Run psql on dest_database                     #
+####################################################
+
+- name: "MKDIR temp resource directory for post-restore SQL/DBA tasks [scope=DST_PAIR]"
+  file: path={{ dest_postgres_tmpsql_dir }} state=directory owner=postgres group=postgres mode=0770
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined and sql_post_restore is defined
+
+- name: "Copy DBA/SQL task for post-restore commands[scope=DST_PAIR]"
+  copy: src=files/database_refresh/{{ sql_post_restore }} dest={{ dest_postgres_tmpsql_dir }}{{ sql_post_restore }} owner=postgres group=postgres mode=0600
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined and sql_post_restore is defined
+
+- name: "Execute DBA/SQL task for post-restore commands[scope=DST_PAIR]"
+  shell: psql -d {{ dest_database }} -a -f {{ dest_postgres_tmpsql_dir }}{{ sql_post_restore }}
+  become: yes
+  become_user: postgres
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined and sql_post_restore is defined
+  no_log: True
+
+
+####################################################
+# Clean-up                                         #
+#  This shall remove files used during transfer    #
+#  and setup. To conserve space etc.               #
+#  -- The find command should be restricted from   #
+#  -- seeing pgsql data files for safety.          #
+####################################################
+
+# ==========================
+# Remove temporary xfer dump
+
+# Finds files (and as ci-deploys in postgres grp; can only find backups and this)
+#   it is isolated from group read permission in /var/lib/pgsql and the 9.3/9.5 dirs
+- fail: msg="Missing -e EXTRA_VARS key 'dest_postgres_tmpsql_dir' (UNDEFINED VARIABLE)"
+  when: dest_postgres_dump_dir is undefined
+
+- name: "Find all files in temp resource directory for incoming SQL dumps [scope=dest]"
+  find:
+    paths: "{{ dest_postgres_dump_dir }}"
+    file_type: "file"
+    patterns: "*.sql"
+  become: yes
+  become_user: postgres
+  register: xfer
+
+- name: "Delete all files in temp resource directory for incoming SQL dumps [scope=dest]"
+  file:
+    path: "{{item.path}}" #correction code
+    state: absent
+  become: yes
+  with_items: "{{ xfer.files }}"
+  when: is_master and tier == dest_tier and dest_postgres_dump_dir is defined
+
+# ==========================
+# Remove temporary SQL stuff
+
+# Finds files (and as ci-deploys in postgres grp; can only find backups and this)
+#   it is isolated from group read permission in /var/lib/pgsql and the 9.3/9.5 dirs
+- fail: msg="Missing -e EXTRA_VARS key 'dest_postgres_tmpsql_dir' (UNDEFINED VARIABLE)"
+  when: dest_postgres_tmpsql_dir is undefined
+
+- name: "Find all files in temp resurce directory for post-restore SQL/DBA tasks[scope=EVERYONE]"
+  find:
+    paths: "{{ dest_postgres_tmpsql_dir }}"
+    file_type: "file"
+    patterns: "*.sql"
+  become: yes
+  become_user: postgres
+  register: tmpsql
+
+- name: "Delete all files in temp resurce directory for post-restore SQL/DBA tasks[scope=EVERYONE]"
+  file:
+    path: "{{item.path}}" #correction code
+    state: absent
+  become: yes
+  with_items: "{{ tmpsql.files }}"
+  when: is_master and tier == dest_tier and dest_postgres_tmpsql_dir is defined

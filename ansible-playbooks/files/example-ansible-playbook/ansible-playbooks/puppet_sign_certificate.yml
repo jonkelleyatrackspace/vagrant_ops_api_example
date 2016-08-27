@@ -1,0 +1,6 @@
+---
+- name: Sign Puppet agent certificates
+  hosts: nodes
+  become: no
+  tasks:
+    - include: tasks/puppet/sign_certificate.yml

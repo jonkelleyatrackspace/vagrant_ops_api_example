@@ -1,0 +1,16 @@
+# var: packages_to_install
+#   - this var should contain a list of valid pakcage names you want to ensure are at latest release
+---
+- name: Destroy cache for each yum repo
+  command: /usr/bin/yum clean expire-cache
+  tags: packages
+
+- name: Remove specified packages
+  yum: name={{ item.name }} state=absent
+  with_items: packages_to_install
+  tags: packages
+
+- name: Install specified versions
+  yum: name={{ item.name }}-{{ item.version }}
+  with_items: packages_to_install
+  tags: packages

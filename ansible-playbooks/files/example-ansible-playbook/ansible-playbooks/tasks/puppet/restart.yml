@@ -1,0 +1,9 @@
+---
+- name: Check status of puppet agent service
+  shell: '/sbin/service puppet status'
+  ignore_errors: yes
+  register: agent_status
+
+- name: Restart puppet agent service if running
+  service: name=puppet state=restarted
+  when: agent_status.stdout.find('running') != -1

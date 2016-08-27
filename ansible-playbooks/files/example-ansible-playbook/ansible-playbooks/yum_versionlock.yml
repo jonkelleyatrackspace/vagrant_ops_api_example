@@ -1,0 +1,24 @@
+# Simple playbook for version locking packages on a host. Requires a list of packages.
+#
+# Packages can be locked at a specified version using the "packages_to_lock" variable:
+#
+#   ansible-playbook -Kki hosts yum_versionlock.yml --extra-vars '{"packages_to_lock": ["repose"]}'
+#
+# Packages can be unlocked using the "packages_to_unlock" variable:
+#
+#   ansible-playbook -Kki hosts yum_versionlock.yml --extra-vars '{"packages_to_unlock": ["repose"]}'
+#
+# Or --extra-vars can be loaded from a JSON or YAML file with the @ syntax:
+#
+#   ansible-playbook -Kki hosts yum_versionlock.yml --extra-vars "@versionlock.json"
+#
+# A sample YAML file for the package list would look like this:
+#
+#   ---
+#   packages_to_versionlock:
+#     - repose
+---
+- hosts: all
+  sudo: yes
+  tasks:
+    - include: tasks/yum/versionlock.yml

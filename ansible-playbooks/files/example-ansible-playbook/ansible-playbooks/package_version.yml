@@ -1,0 +1,10 @@
+---
+- name: List package version
+  hosts:
+    - nodes
+  gather_facts: no
+  sudo: no
+  vars:
+    disable_excludes: false
+  tasks:
+    - include: tasks/yum/check_package_version.yml

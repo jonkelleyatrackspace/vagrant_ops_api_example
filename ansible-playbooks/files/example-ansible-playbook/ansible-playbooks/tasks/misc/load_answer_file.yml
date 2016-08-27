@@ -1,0 +1,14 @@
+---
+- name: Fetch answer data
+  get_url:
+    url: "{{ answers_url }}"
+    dest: ./answers.yaml
+    force: yes
+  when: "{{ answers_url | default(false) }}"
+  delegate_to: 127.0.0.1
+
+- include_vars: "{{ item }}"
+  with_first_found:
+    - "answers.yaml"
+    - "answers.yml"
+  delegate_to: 127.0.0.1

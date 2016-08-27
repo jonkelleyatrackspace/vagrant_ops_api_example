@@ -1,0 +1,11 @@
+[dev:children]
+vagrant-dev
+
+[nodes:children]
+vagrant-dev
+
+[vagrant-dev:children]
+vagrant
+
+[vagrant]
+172.21.12.12

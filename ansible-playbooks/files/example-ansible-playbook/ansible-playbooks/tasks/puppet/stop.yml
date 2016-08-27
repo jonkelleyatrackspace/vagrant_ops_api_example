@@ -1,0 +1,6 @@
+---
+###
+### Stop puppet
+###
+- name: Stop Puppet
+  service: name=puppet state=stopped

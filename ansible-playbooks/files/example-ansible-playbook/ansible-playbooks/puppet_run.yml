@@ -1,0 +1,8 @@
+---
+- name: run puppet
+  hosts:
+    - nodes
+  gather_facts: no
+  sudo: yes
+  tasks:
+    - include: tasks/puppet/run.yml

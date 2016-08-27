@@ -1,0 +1,10 @@
+###
+### Sync /etc/r10k with the r10kconfigs repository found on the disk.
+###
+---
+- name: Update r10kconfigs
+  git:
+    repo: "{{ r10k_git_repo }}"
+    dest: /etc/r10k
+    version: master
+    force: yes

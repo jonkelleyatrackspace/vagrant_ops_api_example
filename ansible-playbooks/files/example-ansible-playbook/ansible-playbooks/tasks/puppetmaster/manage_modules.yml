@@ -1,0 +1,48 @@
+# var: puppet_modules_git
+#   - this var should contain a hash that lists all puppet modules to manage
+#     via a specific tagged version or hash. For example:
+#       puppet_modules_git:
+#         - name: ntp
+#           url: git@github.com:puppetlabs/puppet-ntp.git
+#           version: 1.2.0
+#
+# var: puppet_modules_forge
+#   - This should contain a hash listing forge sourced puppet modules to manage
+#     via a specific released version. For example:
+#       puppet_modules_forge:
+#         - name: ntp
+#           user: puppetlabs
+#           version: 1.2.0
+#   - NOTE: You get NO dependency resolution due to the --force
+#
+---
+- name: Update directory permissions
+  shell: "find {{ puppet_module_dir | default('/etc/puppet/modules') }}/{{ item.name }} -type d -group lnx-cloud-cit -not -perm -020 -exec chmod g+ws {} \\;"
+  with_items: "{{ puppet_modules_git | default([]) }}"
+  ignore_errors: yes
+  sudo: yes
+
+- name: Update file permissions
+  shell: "find {{ puppet_module_dir | default('/etc/puppet/modules') }}/{{ item.name }} -type f -group lnx-cloud-cit -not -perm -020 -exec chmod g+w {} \\;"
+  with_items: "{{ puppet_modules_git | default([]) }}"
+  ignore_errors: yes
+  sudo: yes
+
+- name: Update specified puppet modules via git
+  git:
+    repo: "{{ item.url }}"
+    dest: "{{ puppet_module_dir | default('/etc/puppet/modules') }}/{{ item.name }}"
+    version: "{{ item.version | default('master') }}"
+  with_items: "{{ puppet_modules_git | default([]) }}"
+
+- name: Install specified puppet modules via puppet module command
+  shell: "puppet module install {{ item.user }}-{{ item.name }} --version {{ item.version }} --target-dir {{ puppet_module_dir | default('/etc/puppet/modules') }} --force"
+  with_items: "{{ puppet_modules_forge | default([]) }}"
+  sudo: yes
+
+## We can't do upgrade as a separate step until this issue is addressed
+## https://tickets.puppetlabs.com/browse/PUP-3087
+##
+#- name: Update specified puppet modules via puppet module command
+#  shell: "puppet module upgrade {{ item.user }}-{{ item.name }} --version {{ item.version }}"
+#  with_items: puppet_modules_forge

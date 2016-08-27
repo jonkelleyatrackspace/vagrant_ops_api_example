@@ -1,0 +1,9 @@
+---
+- name: gracefully restart httpd
+  command: service httpd graceful
+
+- name: restart httpd
+  service: name=httpd state=restarted
+
+- name: restart puppetserver
+  service: name=puppetserver state=restarted

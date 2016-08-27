@@ -1,0 +1,8 @@
+---
+###
+### Run puppet
+###
+- name: Run Puppet
+  shell: /usr/bin/puppet agent --test --color=false
+  register: puppet_agent
+  failed_when: not puppet_agent.rc in [0, 1, 2]

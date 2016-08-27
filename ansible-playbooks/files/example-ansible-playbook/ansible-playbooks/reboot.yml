@@ -1,0 +1,22 @@
+###### Reboot a set of Nodes:
+# Usage:
+#
+# Disabling no services:
+# ansible-playbook -vv -k --become --ask-become-pass -i $hosts reboot.yml --limit $limits 
+#
+# Disabling a list of services
+# ansible-playbook -vv -k --become --ask-become-pass -i $hosts reboot.yml --limit $limits --extra-vars '{"disable_services":["list","of","services"]}'
+#
+#
+---
+- name: Reboot nodes
+  hosts:
+    - nodes
+  gather_facts: no
+  sudo: yes
+  vars:
+    reboot: true
+    disable_services: []
+  tasks:
+    - include: tasks/misc/reboot.yml
+      when: reboot

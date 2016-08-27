@@ -1,0 +1,19 @@
+---
+- name: Install epel-release package for EL6
+  yum:
+    name: http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+    state: present
+  when: (ansible_distribution == "RedHat" or ansible_distribution == "CentOS")
+    and ansible_distribution_major_version == "6"
+
+- name: Install epel-release package for EL7
+  yum:
+    name: http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rpm
+    state: present
+  when: (ansible_distribution == "RedHat" or ansible_distribution == "CentOS")
+    and ansible_distribution_major_version == "7"
+
+- name: Update epel-release package
+  yum:
+    name: epel-release
+    state: latest

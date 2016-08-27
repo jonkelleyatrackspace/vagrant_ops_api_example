@@ -1,0 +1,140 @@
+---
+# file: database_refresh.yml
+# author: jon.kelley@rackspace.com
+# Copyright: 2016 Rackspace, Jonathan Kelley
+# License:   Apache License Version 2.0
+# ============
+# Book Summary
+# ============
+# The intention of this playbook is to support database migrations between two database tiers.
+#  For instance, a PRODUCT_production on DFW prod database should be migratable to the dev DB
+#   as PRODUCT_etl.   Ancillary support should include database scrubbing, permission reset,
+#   and arbitrary SQL injection on the target DB (for generic ops/dev/qe tasks)
+#
+#********
+# TASKS *
+#********
+#  tasks/postgres/register_pgrecovery.yml
+#  ======================================
+#  Registers ismaster, pg_is_in_recovery variables.
+#  This is generic possible to re-use.
+#
+#  tasks/postgres/database_refresh.yml
+#  ======================================
+#  Runs the database refresh (this playbooks purpose)
+#
+#********
+# FILES *
+#********
+#  files/database_refresh/database_post_restore.sql
+#  =====================================================
+#  Post-restore tasks to run on database after the template
+#   is copied. This is file is defined by the variable
+#  {{ sql_post_restore }}
+#
+#  files/database_refresh/database_scrub.sql
+#  =====================================================
+#  Sensitive data scrub tasks to run on database after the
+#   template is copied. This is defined by the variable
+#  {{ sql_scrub_file }}
+#
+#
+# ========
+# Examples
+# ========
+# Common usage examples in the wild.
+#
+#****************
+# COMMAND USAGE *
+#****************
+# ansible-playbook -u ci-deploys ansible-playbooks-jon/database_refresh.yml  -i ansible-hosts -l 'test:staging:&dbinfra:&ord1' -v -e '@deploy-vars.yml'
+#
+#
+# EXTRA_ARGS OPTIONS
+# ==================
+#   src_tier: Source tier you want to migrate data from.
+#   dest_tier: The tier you want the migration to go to.
+#   dest_postgres_dump_path: Where the SQL dump drops in depot
+#   dest_postgres_tmpsql_path: Where various SQL/DBA tasks go
+#   origin_database: The database to migrate from the src_tier
+#   dest_database: The database to migrate to in dest_tier
+#   dest_database_template: The name of the interim template db
+#   sql_scrub_file: OPTIONAL: Path to file resource for SQL scrubs
+#   sql_post_restore:OPTIONAL: Path to file resource for DBA tasks.
+#
+# NOTE: To debug and leave sql files behind set variable dbrefresh_nocleanup: true
+# NOTE: sql_scrub_file and sql_post_restore are OPTIONAL variables, and if undefined
+#    will not be used. If defined, the files are copied from files/database_refresh/
+#
+#************************
+# USE LATEST DB EXAMPLE *
+#************************
+#
+# File: deploy-vars.yml 
+# ---
+# vars:
+#   src_tier: staging
+#   dest_tier: dev
+#   dest_postgres_dump_path: /var/lib/pgsql/xferincoming/
+#   dest_postgres_tmpsql_path: /var/lib/pgsql/xfertmp/
+#   src_postgres_dump_path: /var/lib/pgsql/backups
+#   origin_database: myproduct_production
+#   dest_database: myproduct_extract_transform_db
+#   dest_database_owner: myproduct_super_role
+#   dest_database_template: myproduct_etl_template
+#   sql_scrub_file: myproduct_scrub.sql
+#   sql_post_restore: myproduct_post_restore.sql
+#
+#
+#*****************************
+# COPY EXPLICIT FILE EXAMPLE * 
+#*****************************
+# This example uses copy_exact_file, which wants an explicit filename
+# to copy from the backups folder.
+#
+# File: deploy-vars.yml
+# ---
+# vars:
+#   src_tier: staging
+#   dest_tier: dev
+#   dest_postgres_dump_path: /var/lib/pgsql/xferincoming/
+#   dest_postgres_tmpsql_path: /var/lib/pgsql/xfertmp/
+#   src_postgres_dump_path: /var/lib/pgsql/backups
+#   copy_exact_file: obscure-file.txt.sql
+#   dest_database: myproduct_extract_transform_db
+#   dest_database_owner: myproduct_super_role
+#   dest_database_template: myproduct_etl_template
+#   sql_scrub_file: myproduct_scrub.sql
+#   sql_post_restore: myproduct_post_restore.sql
+#
+# ======================================
+# Operational Assumptions/Requirements
+# ======================================
+#
+# - That you can ssh as a non-privileged user using authorized_keys and ssh-agent,
+#   and that this user has sudo access for postgres.
+# - The non-privileged user is part of the psotgres-group so that it can
+#   write to the pgsql directory and read the backups directory.
+
+- hosts: postgres
+  vars: # Predictable Defaults
+    origin_database: false   # If remains false, copy_exact_file assumed/required.
+  tasks:
+    - fail: msg="Missing -e EXTRA_VARS key 'src_tier' (UNDEFINED VARIABLE)"
+      when: src_tier is undefined
+    - fail: msg="Missing -e EXTRA_VARS key 'dest_tier' (UNDEFINED VARIABLE)"
+      when: dest_tier is undefined
+    - fail: msg="Missing -e EXTRA_VARS key 'dest_postgres_dump_dir' (UNDEFINED VARIABLE)"
+      when: dest_postgres_dump_dir is undefined
+    - fail: msg="Missing -e EXTRA_VARS key 'dest_postgres_tmpsql_dir' (UNDEFINED VARIABLE)"
+      when: dest_postgres_tmpsql_dir is undefined
+    - fail: msg="Missing -e EXTRA_VARS key 'src_postgres_dump_dir' (UNDEFINED VARIABLE)"
+      when: src_postgres_dump_dir is undefined
+    - fail: msg="Missing -e EXTRA_VARS key 'origin_database' (UNDEFINED VARIABLE)"
+      when: origin_database is undefined and copy_exact_file is undefined
+    - fail: msg="Missing -e EXTRA_VARS key 'dest_database_owner' (UNDEFINED VARIABLE)"
+      when: dest_database_owner is undefined
+    - fail: msg="Missing -e EXTRA_VARS key 'dest_database_template' (UNDEFINED VARIABLE)"
+      when: dest_database_template is undefined
+    - { include: tasks/postgres/register_pgrecovery.yml }
+    - { include: tasks/postgres/database_refresh.yml }

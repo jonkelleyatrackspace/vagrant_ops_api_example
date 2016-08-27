@@ -38,6 +38,26 @@ Vagrant.configure("2") do |config|
     end
   end
 
+  # -------------------
+  # - ANSIBLE RUNHOST -
+  # -------------------
+  # Perform the ansible proxy examples
+  config.vm.define "skyscraper" do |api|
+    api.vm.hostname = "brds-api"
+    api.vm.network :private_network, ip: "172.21.12.13", auto_config: true
+    api.vm.network "forwarded_port", guest: 80, host: "8080", auto_correct: true
+
+    # The IP was reverting to dhcp... centos 7 issue?
+    # http://stackoverflow.com/questions/32518591/centos7-with-private-network-lost-fixed-ip
+    api.vm.provision :shell, :inline => "sudo nmcli connection reload", :privileged => true
+    api.vm.provision :shell, :inline => "sudo systemctl restart network.service", :privileged => true
+
+    api.vm.provision "ansible" do |ansible|
+      #ansible.verbose = "vvvvv"
+      ansible.playbook = "ansible-playbooks/ansibleskyscraper_install.yml"
+    end
+  end
+
   # ----------------------
   # - REPOSITORY EXAMPLE -
   # ----------------------

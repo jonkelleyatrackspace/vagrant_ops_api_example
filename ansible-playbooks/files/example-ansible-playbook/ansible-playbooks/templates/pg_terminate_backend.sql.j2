@@ -1,0 +1,28 @@
+-- This file is managed by Ansible
+-- *******************************
+-- AUTHOR........: jon.kelley@rackspace.com
+-- SOURCE........: tasks/postgres/kill_database_backend.yml
+-- DESCRIPTION...: TERMINATES ACTIVE POSTGRES CONNECTIONS
+--                 TO A SPECIFIC DATABASE NAME AS DEFINED
+--                 BY pgterminate_database_name
+--
+-- ABSIBLE_HOST_VAR_DEBUG_WRITEOUT_HINTS
+-- *************************************
+--   sql_render_datetime: {{ template_run_date }}
+--   sql_render_host: {{ template_host }}
+--   sql_j2_template_path: {{ template_fullpath }}
+
+-- note to self:
+-- pid = pg 9.2+ 
+-- procpid = 9.1 below
+
+{% if pgterminate_database_revoke_owner %}
+REVOKE connect ON DATABASE {{ pgterminate_database_name }} FROM PUBLIC;
+REVOKE connect ON DATABASE {{ pgterminate_database_name }} FROM postgres;
+REVOKE connect ON DATABASE {{ pgterminate_database_name }} FROM {{ pgterminate_database_revoke_owner }};
+{% endif %}
+
+SELECT pg_terminate_backend(pid)
+  FROM pg_stat_activity
+    WHERE datname = '{{ pgterminate_database_name }}'
+    AND pid <> pg_backend_pid();

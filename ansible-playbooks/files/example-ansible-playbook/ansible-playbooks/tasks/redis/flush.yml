@@ -1,0 +1,5 @@
+- name: Flush Redis cache
+  redis:
+    command: flush
+    flush_mode: all
+  tags: flush

@@ -1,0 +1,14 @@
+---
+- name: Install puppetlabs-release package for EL6
+  yum:
+    name: http://yum.puppetlabs.com/el/6/products/x86_64/puppetlabs-release-6-7.noarch.rpm
+    state: present
+  when: (ansible_distribution == "RedHat" or ansible_distribution == "CentOS")
+    and ansible_distribution_major_version == "6"
+
+- name: Install puppetlabs-release package for EL7
+  yum:
+    name: http://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-11.noarch.rpm
+    state: present
+  when: (ansible_distribution == "RedHat" or ansible_distribution == "CentOS")
+    and ansible_distribution_major_version == "7"

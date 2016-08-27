@@ -1,0 +1,7 @@
+# var: packages_to_remove
+#   - this var should contain a list of valid pakcage names you want to ensure are absent
+---
+- name: Remove specified packages
+  yum: name={{ item }} state=absent
+  with_items: "{{ packages_to_remove }}"
+  tags: packages

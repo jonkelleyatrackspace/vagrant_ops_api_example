@@ -1,0 +1,36 @@
+---
+# file: tasks/postgres/kill_database_backend.yml
+# author: jon.kelley@rackspace.com
+# Copyright: 2016 Rackspace, Jonathan Kelley
+# License:   Apache License Version 2.0
+
+##############################################################
+# This task will kill active database connections            #
+#  when provided the variable {{ pgterminate_database_name }}#
+# Required Variables:                                        #
+# - pgterminate_database_name name of the db to terminate    #
+#   backend connections for.                                 #
+# Variables:                                                 #
+# - pgterminate_database_revoke_owner = name of owner to     #
+#   revoke CONNECT rights to, so that users cannot reconnect.#
+#   This will not occur unless this variable is set.         #
+#   WARNING: you're on you're own with the grants ¯\_(ツ)_/¯ #
+##############################################################
+- fail: msg="Missing -e EXTRA_VARS key 'pgterminate_database_name' (UNDEFINED VARIABLE)"
+  when: pgterminate_database_name is undefined
+
+- name: "Copy DBA/SQL file for terminate database backend..."
+  template:
+    src: templates/pg_terminate_backend.sql.j2
+    dest: "/tmp/terminate_backend.sql"
+    owner: postgres
+    group: postgres
+  become: yes
+  become_user: postgres
+  when: dest_database is defined
+
+- name: "Exec DBA/SQL file for terminate database backend (KILLING ACTIVE CONNECTIONS)..."
+  shell: psql -d {{ pgterminate_database_name }} -a -f {{ dest_postgres_tmpsql_dir }}/terminate_backend.sql
+  become: yes
+  become_user: postgres
+  when: dest_database is defined

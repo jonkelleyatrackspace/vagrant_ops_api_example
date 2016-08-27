@@ -1,0 +1,3 @@
+---
+- name: Pause while testing occurs
+  pause: prompt="Waiting for testing to finish (^C-c = continue, ^C-a = abort)"

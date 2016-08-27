@@ -1,0 +1,8 @@
+###
+### Run the puppet CA commands from Jenkins as needed.
+### Do things such as sign, revoke certs etc.
+###
+---
+
+- name: PuppetCA Management Inteface
+  command: puppet cert {{ certificate_action }} {{ other_args }} {{ certificate_hostname }}

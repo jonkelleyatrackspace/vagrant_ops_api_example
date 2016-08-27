@@ -1,0 +1,11 @@
+---
+- name: Get package version
+  command: rpm -q {{ package }}
+  register: rpm_check
+  ignore_errors: yes
+
+- debug: msg="{{ rpm_check.stdout }}."
+  when: rpm_check.rc == 0
+
+- debug: msg="{{ package }} does not seem to be installed"
+  when: rpm_check.stdout.find('is not installed') != -1

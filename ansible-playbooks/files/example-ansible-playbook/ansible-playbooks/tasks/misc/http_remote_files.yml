@@ -1,0 +1,6 @@
+# var: http_files_to_get
+#  - this var should contain a list of remote files to retrieve via HTTP
+---
+- name: Get remote files via HTTP(S)
+  get_url: url={{ item.source }} dest={{ item.dest }}
+  with_items: http_files_to_get

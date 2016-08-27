@@ -1,0 +1,7 @@
+---
+- name: update puppet modules
+  hosts: puppetmasters
+  gather_facts: no
+  sudo: no
+  tasks:
+    - include: tasks/puppetmaster/manage_modules.yml

@@ -1,0 +1,15 @@
+---
+- name: Update non-excluded packages
+  yum: name=* state=latest update_cache=yes
+  when: not disable_excludes
+  tags: packages
+
+- name: Destroy cache for each yum repo
+  command: /usr/bin/yum clean expire-cache
+  when: disable_excludes
+  tags: packages
+
+- name: Update all packages, even yum excluded ones
+  command: /usr/bin/yum -y --disableexcludes=all update
+  when: disable_excludes
+  tags: packages

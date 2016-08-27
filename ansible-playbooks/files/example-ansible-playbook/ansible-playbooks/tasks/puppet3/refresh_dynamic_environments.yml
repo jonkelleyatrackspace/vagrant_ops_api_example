@@ -1,0 +1,9 @@
+# var: puppet_refresh_environments
+#   type: boolean
+#   default: true
+#   description: Whether or not to manually refresh environments.
+#
+---
+- name: Refresh environments on puppetmaster
+  command: r10k deploy environment --puppetfile -c /etc/r10k/r10k.yaml
+  when: "{{ puppet_refresh_environments | default(true) }}"

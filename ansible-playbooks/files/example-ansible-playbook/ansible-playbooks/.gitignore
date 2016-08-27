@@ -1,0 +1,8 @@
+*.retry
+ansible.cfg
+answers.yml
+answers.yaml
+answers/
+hosts/
+roles
+roles/

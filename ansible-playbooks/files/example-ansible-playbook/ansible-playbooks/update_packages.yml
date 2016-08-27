@@ -1,0 +1,10 @@
+---
+- name: Deploy to nodes
+  hosts:
+    - nodes
+  gather_facts: no
+  sudo: yes
+  vars:
+    disable_excludes: false
+  tasks:
+    - include: tasks/yum/update_specific.yml

@@ -1,0 +1,66 @@
+---
+# file: tasks/postgres/register_pgrecovery.yml
+# author: jon.kelley@rackspace.com
+# Copyright: 2016 Rackspace, Jonathan Kelley
+# License:   Apache License Version 2.0
+
+###################################################
+# Register Postgres Recovery Status               #
+# This will set some facts useful when using      #
+#  Postgres servers (sets the recovery status)    #
+#                 ------------                    #
+#  * Set the fact is_master and pg_is_in_recovery #
+#    based on the determined cluster state.       #
+###################################################
+# pg_in_recovery = true  (is a replica)
+# pg_in_recovery = false (is a master)
+
+# ***************************
+# * ask postgres for status *
+# ***************************
+- name: "REGISTER: pg_is_in_recovery (based on psql output)"
+  become: yes
+  become_user: postgres
+  tags:
+    - check_recovery
+  shell: psql -c "select pg_is_in_recovery()" -t | cut -c2
+  register: pg_is_in_recovery
+
+# *************************
+# * set pg_is_in_recovery *
+# *************************
+- name: "SET_FACT: in_recovery=false"
+  set_fact: in_recovery=false
+  when: pg_is_in_recovery.stdout == "f"
+  tags:
+    - check_recovery
+
+- name: "SET_FACT: in_recovery=true"
+  set_fact: in_recovery=true
+  when: pg_is_in_recovery.stdout == "t"
+  tags:
+    - check_recovery
+
+
+# *****************
+# * set is_master *
+# *****************
+- name: "SET_FACT: is_master=true"
+  set_fact: is_master=true
+  when: not in_recovery
+
+- name: "SET_FACT: is_master=false"
+  set_fact: is_master=false
+  when: in_recovery
+
+
+# *********
+# * debug *
+# *********
+- name: "DEBUG: Detected Postgres hosts with attribs: IS_MASTER: true && IN_RECOVERY: false"
+  debug: var=is_master
+  when: is_master
+
+- name: "DEBUG: Detected Postgres hosts with attribs: IS_MASTER: false && IN_RECOVERY: true"
+  debug: var=is_master
+  when: not is_master

@@ -1,0 +1,45 @@
+# Simple playbook for updating hosts.  It defaults to all hosts, but you can pass
+# a list of packages.
+#
+# Perform a standard yum update
+#
+#   ansible-playbook -i hosts yum_update.yml
+#
+# You can force everything including "excluded" packages
+#
+#   ansible-playbook -i hosts yum_update.yml -e 'update_everything=true'
+#
+# Straight from the CLI you can pass a proper JSON list to --extra-vars parameter:
+#
+#   ansible-playbook -i hosts yum_update.yml --extra-vars '{"packages_to_update": ["openssl", "openssh-server"]}'
+#
+# Or --extra-vars can be loaded from a JSON or YAML file with the @ syntax:
+#
+#   ansible-playbook -i hosts yum_update.yml --extra-vars "@package_list.json"
+#
+# You can reboot after kernel updates by passing the reboot after flag to --extra-vars
+#
+#   ansible-playbook -i hosts yum_update.yml -e '{"update_everything": "true", "reboot_after_updates": "true"}'
+#
+# A sample YAML file for the package list would look like this:
+#
+#   ---
+#   packages_to_update:
+#     - openssl
+#     - openssh-server
+---
+- hosts: all
+  sudo: yes
+  vars:
+    update_everything: false
+    reboot_after_updates: false
+    disable_services: []
+  tasks:
+    - include: tasks/yum/update.yml
+      when: not update_everything
+
+    - include: tasks/yum/update_everything.yml
+      when: update_everything
+
+    - include: tasks/misc/reboot.yml
+      when: reboot_after_updates

@@ -1,0 +1,12 @@
+---
+- name: Ensure yum-versionlock is installed
+  yum: name=yum-plugin-versionlock state=latest update_cache=yes
+  when: "packages_to_lock is defined or packages_to_unlock is defined"
+
+- name: Lock the version of the specified packages
+  command: yum versionlock {{ item }}
+  with_items: "{{packages_to_lock | default([])}}"
+
+- name: Unlock the version of the specified packages
+  command: yum versionlock delete {{ item }}
+  with_items: "{{packages_to_unlock | default([])}}"

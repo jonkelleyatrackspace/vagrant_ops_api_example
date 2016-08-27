@@ -1,0 +1,18 @@
+# This set of tasks is designed to sign a new PuppetCA certificate for a host. Typically
+# only used when registering a system.
+#
+# env var: SSO
+#   - Lookup the SSO username from the local environment, this is required due to all the user
+#     switching that is typically happening when initially registering a node
+# var: ansible_fqdn
+#   - This is a built in fact that represents the target system's fqdn. No need to set it
+# var: puppetmaster
+#   - This is a group_var provided fact, it can be overridden from the cli with -e 'puppetmaster=blah'
+---
+- name: Sign certificate for {{ ansible_fqdn }} on {{ puppetmaster }}
+  command: puppet cert sign {{ ansible_fqdn }}
+  args:
+    creates: /var/lib/puppet/ssl/ca/signed/{{ ansible_fqdn }}.pem
+  remote_user: "{{lookup('env','SSO')}}"
+  delegate_to: "{{ puppetmaster }}"
+  become: yes

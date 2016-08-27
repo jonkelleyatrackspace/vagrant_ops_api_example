@@ -1,0 +1,10 @@
+- name: Populate hiera.yaml
+  copy:
+    src: files/puppet/hiera.yaml
+    dest: "{{ puppet_confdir | default('/etc/puppet') }}/hiera.yaml"
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart puppetserver
+    

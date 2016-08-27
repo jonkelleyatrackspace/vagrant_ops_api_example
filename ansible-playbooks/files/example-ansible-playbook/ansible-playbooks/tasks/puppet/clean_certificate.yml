@@ -1,0 +1,21 @@
+# This set of tasks is designed to clean off the PuppetCA certificate for a host. Typically
+# only used when re-kicking a system. This handles revoking the old certificate
+# and removing copies of it from the PuppetCA.
+#
+# var: ansible_fqdn
+#   - This is a built in fact that represents the target system's fqdn. No need to set it
+#
+# var: puppetmaster
+#   - This is a group_var provided fact, it can be overridden from the cli with -e 'puppetmaster=blah'
+---
+- name: Clean certificates from node
+  file:
+    path: /var/lib/puppet/ssl
+    state: absent
+
+- name: Clean certificate for {{ ansible_fqdn }} on {{ puppetmaster }}
+  command: puppet cert clean {{ ansible_fqdn }}
+  remote_user: "{{lookup('env','SSO')}}"
+  delegate_to: '{{ puppetmaster }}'
+  become: yes
+  ignore_errors: yes

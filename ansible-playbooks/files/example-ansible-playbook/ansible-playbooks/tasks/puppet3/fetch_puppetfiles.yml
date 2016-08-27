@@ -1,0 +1,9 @@
+###
+### Sync the .puppetfiles down from github using
+### the r10kconfigs dict from group_vars/puppetserver
+###
+---
+
+- name: Fetching puppetfile from github {{ item.value.url }} to {{r10k_dir}}/{{item.key}}
+  git: repo={{ item.value.url }} dest={{r10k_dir}}/puppetfiles/{{item.key}} version={{ item.value.versions[tier] }}
+  with_dict: "{{r10kconfigs}}"

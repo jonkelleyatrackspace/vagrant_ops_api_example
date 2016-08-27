@@ -1,0 +1,10 @@
+- name: Populate puppet.conf
+  template:
+    src: templates/puppet.conf.j2
+    dest: "{{ puppet_confdir | default('/etc/puppet') }}/puppet.conf"
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart puppetserver
+    

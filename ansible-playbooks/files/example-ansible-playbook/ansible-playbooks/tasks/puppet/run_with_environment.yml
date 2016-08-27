@@ -1,0 +1,10 @@
+# var: puppet_environment
+#   type: string
+#   default: none
+#   description: The environment in Puppet that the agent should be attached to
+#
+---
+- name: Run Puppet with environment argument
+  shell: /usr/bin/puppet agent --test --color=false --environment={{ puppet_environment }}
+  register: puppet_agent
+  failed_when: not puppet_agent.rc in [0, 2]

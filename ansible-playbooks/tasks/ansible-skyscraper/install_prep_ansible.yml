@@ -1,0 +1,27 @@
+# file: ansible_install.yml
+# Copyright 2016, Jonathan Kelley  
+# License Apache Commons v2 
+
+# Installs ansible and copies the example playbooks over
+---
+- name: "Install ansible"
+  pip: name=ansible
+
+- name: "Build scripts root"
+  file:
+    path: /opt/playbooks/
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+    recurse: yes
+
+- name: "Copy Example Scripts"
+  copy: src=files/example-ansible-playbook/ dest=/opt/playbooks/
+
+- name: "Set Script Permissions"
+  file:
+    path: /opt/playbooks/
+    owner: root
+    group: root
+    mode: 0755

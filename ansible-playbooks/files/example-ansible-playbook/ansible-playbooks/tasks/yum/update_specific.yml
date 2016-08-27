@@ -1,0 +1,16 @@
+---
+- name: Destroy cache for each yum repo
+  command: /usr/bin/yum clean expire-cache
+  tags: packages
+
+- name: Update specified packages
+  command: /usr/bin/yum -y update {{ item }}
+  with_items: "{{ packages_to_update }}"
+  when: not disable_excludes
+  tags: packages
+
+- name: Update specified packages, even yum excluded ones
+  command: /usr/bin/yum -y --disableexcludes=all update {{ item }}
+  with_items: "{{ packages_to_update }}"
+  when: disable_excludes
+  tags: packages

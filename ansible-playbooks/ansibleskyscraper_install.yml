@@ -1,0 +1,19 @@
+---
+# file: ansibeskyscraper_install.yml
+# Copyright 2016, Jonathan Kelley  
+# License Apache Commons v2 
+
+#   Sets up an API host to trigger ansible on remote hosts
+#   This is primarily a proof of concept to test if ansible
+#   executions can be done through my API with subprocess.
+
+- name: "PLAY: Configure `skyscraper` vm"
+  hosts: skyscraper
+  user: vagrant
+  become: true
+  tasks:
+    - name: "TASK: Configure skyscraper demo"
+      shell: id
+      become: yes
+    - include: tasks/ansible-skyscraper/install_prep_ansible.yml
+    - include: tasks/jojo/install.yml

@@ -1,0 +1,8 @@
+---
+- name: Remove packages from nodes
+  hosts:
+    - nodes
+  gather_facts: no
+  sudo: yes
+  tasks:
+    - include: tasks/yum/remove.yml

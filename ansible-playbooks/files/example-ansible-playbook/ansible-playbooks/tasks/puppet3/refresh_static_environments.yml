@@ -1,0 +1,9 @@
+###
+### Runs the r10kwrapper command in order to sync the puppetfiles
+### into the target directories from the source /etc/r10k/wrapper.ini
+###
+---
+
+- name: Run r10kwrapper
+  command: r10kwrapper -x {{ r10kwrapper_action | default ('install') }} {{ item.value.wrapper_ini_section_post_triggers }}
+  with_dict: "{{r10kconfigs}}"

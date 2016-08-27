@@ -1,0 +1,3 @@
+---
+- name: gracefully restart httpd
+  command: /sbin/service httpd graceful
