@@ -22,19 +22,21 @@
 # -- jojo --
 
 from os import linesep
-from common import MkTemp, Sanitize, CmdRun, Environment
+from common import MkTemp, Sanitize, CmdRun
 from common import ToolKit, Constants, ParamHandle2
 
 # Spawn Instances
-parameter2    = ParamHandle2()    # <class> Parameter manipulation
+parameter     = ParamHandle2()    # <class> Parameter manipulation
 real_escape_string = Sanitize()   # <class> Escape Routines
 toolkit       = ToolKit()         # <class> Misc. functions
-environment   = Environment()     # <class> Manages Env Vars
 temp_file     = MkTemp()          # <class> Do /tmp/ build/teardown
-params        = parameter2.list() # <dict>  Input params list
+params        = parameter.list()  # <dict>  Input params list
 run           = CmdRun()          # <class> Runs the query
 
-# These will be the arguements passed to any cmdRun backends.
+
+# ************************************
+# *  DEFINE PARAMETERS AND VALIDATE  *
+# ************************************
 sanitized_arguement = {}
 
 define_param = "ROLE"
@@ -193,11 +195,10 @@ else:
     connection_limit = sanitized_arguement['CONNECTION_LIMIT']
 arg_connlimit = " CONNECTION LIMIT {max} ".format(max=connection_limit)
 
-# ---------------------------
-# --- Define SQL Sentence ---
-# This strings together the verbs in the section above
-#  and string sanitizes a query.
 
+# ******************
+# *  SQL SENTENCE  *
+# ******************
 clean_sql = ("BEGIN; CREATE ROLE {username} WITH {connection_limit}{createuser}"
              "{createrole}{createdb}{inherit}{login}{encrypted} PASSWORD '{password}'"
              " {inrole}{ingroup}; END;"
@@ -214,20 +215,21 @@ clean_sql = ("BEGIN; CREATE ROLE {username} WITH {connection_limit}{createuser}"
     inrole=real_escape_string.sql(sanitized_arguement['ROLENAME']),
     ingroup=real_escape_string.sql(sanitized_arguement['GROUPNAME']),
 )
-
-# ---------------
-# --- Run SQL ---
+# Fail if SQL overruns 2000 bytes
 toolkit.fail_beyond_maxlength(maxlength=2000, string=clean_sql)
-sql_code = temp_file.write(clean_sql)
 
-# -----------------
-# --- Print SQL ---
+
+# ****************
+# *  SQL RUNNER  *
+# ****************
+sql_code = temp_file.write(clean_sql)
 output = run.sql(sql_code)
 print(output)
 
-# -----------------------
-# --- OUTPUT FILTER ---
-# Report back intelligible errors to the user.
+
+# **********************
+# *  OUTPUT PROCESSOR  *
+# **********************
 exitcode = 0
 error_scenario_1 = False
 error_scenario_2 = False
