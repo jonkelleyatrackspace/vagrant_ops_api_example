@@ -11,7 +11,7 @@
 # -- jojo --
 
 from os import linesep
-from common import MkTemp, Sanitize, CmdRun
+from common import Sanitize, CmdRun
 from common import ToolKit, Constants
 from common import ParamHandle2 as Param
 
@@ -19,7 +19,6 @@ from common import ParamHandle2 as Param
 p = Param()                       # <class> Parameter manipulation
 real_escape_string = Sanitize()   # <class> Escape Routines
 toolkit = ToolKit()               # <class> Misc. functions
-temp_file = MkTemp()              # <class> Do /tmp/ build/teardown
 params = p.list()                 # <dict>   Input params list
 run = CmdRun()                    # <class> Runs the query
 
@@ -45,7 +44,7 @@ sanitized_arguement[param] = database.get()
 clean_sql = ("DROP DATABASE {dbname};"
              ).format(dbname=sanitized_arguement["DATABASE"])
 toolkit.fail_beyond_maxlength(maxlength=2000, string=clean_sql)
-sql_code = temp_file.write(clean_sql)
+sql_code = toolkit.write_temp(clean_sql)
 
 
 # ****************
@@ -103,3 +102,5 @@ else:
     print("jojo_return_value execution_status=rollback")
     print("jojo_return_value error_reason_indicator={error}".format(
         error=error_hint))
+
+toolkit.exit(exitcode)

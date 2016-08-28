@@ -20,7 +20,7 @@ run = CmdRun()        # <class> Run
 # *  SQL SENTENCE  *
 # ******************
 sql = ("BEGIN; select * from pg_stat_activity; COMMIT;")
-sql_code = temp_file.write(sql)
+sql_code = toolkit.write_temp(sql)
 
 
 # ****************
@@ -34,5 +34,4 @@ output = run.sql(sql_code)
 # **********************
 print(output)
 print("jojo_return_value execution_status=ok")
-temp_file.close()  # Cleanup temp SQL
-exit(0)  # Exit with status
+toolkit.exit(0)

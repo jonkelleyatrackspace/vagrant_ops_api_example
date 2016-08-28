@@ -116,35 +116,6 @@ class CmdRun():
         return False
 
 
-class MkTemp():
-    """
-    CLASS: This class handles the writing and cleanup of temporary files.
-           Uses tempfile.NamedTemporaryFile, which is like bash `mktemp`
-    """
-
-    def harden_permissions(self, fname):
-        """
-        Sets permissions on the tmpfiles for reasonable security.
-        """
-        #uid = getpwnam('postgres').pw_uid
-        #gid = getpwnam('postgres').pw_gid
-        chmod(fname, 0777)      # o+rw
-        # chown(fname, uid, gid)  # chown postgres: fname
-
-    def write(self, content):
-        """
-        Write intermediary contents to a temporary file handle
-        """
-        with NamedTemporaryFile(mode='w+b', delete=False) as f:
-            self.f = f.name
-            f.write(content)  # Write
-            self.harden_permissions(f.name)
-            return f.name
-
-    def close(self):
-        unlink(self.f)
-
-
 class Constants():
     """
     CLASS: Fixed properties that rarely change
@@ -208,6 +179,38 @@ class ToolKit():
             print("jojo_return_value error_reason_indicator=UNKNOWN")
             exit(1)
 
+    def harden_permissions(self, fname):
+        """
+        Sets permissions on the tmpfiles for reasonable security.
+        """
+        #uid = getpwnam('postgres').pw_uid
+        #gid = getpwnam('postgres').pw_gid
+        chmod(fname, 0777)      # o+rw
+        # chown(fname, uid, gid)  # chown postgres: fname
+
+    def write_temp(self, content):
+        """
+        Write intermediary contents to a temporary file handle.
+        :param content: The content you wish to save
+
+        :return f.name: the name of the file.
+        """
+        with NamedTemporaryFile(mode='w+b', delete=False) as f:
+            self.f = f.name
+            f.write(content)  # Write
+            self.harden_permissions(f.name)
+            return f.name
+
+    def exit(self,value=0):
+        """
+        Exits the application, unlinks write_temp resouce from /tmp
+
+        :param value: exit value
+
+        :return: exit(value)
+        """
+        unlink(self.f)
+        return exit(value)
 
 class Sanitize():
     """

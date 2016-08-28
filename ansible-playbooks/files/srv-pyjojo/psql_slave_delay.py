@@ -23,7 +23,7 @@ toolkit = ToolKit()  # <class> Misc. functions
 # *  SQL SENTENCE  *
 # ******************
 sql = ("SELECT now() - pg_last_xact_replay_timestamp() AS time_lag;")
-sql_code = temp_file.write(sql)
+sql_code = toolkit.write_temp(sql)
 
 
 # ****************
@@ -96,6 +96,5 @@ else:
 print("jojo_return_value slave_delay={ts}".format(ts=delay))
 print("jojo_return_value slave_delta_in_seconds={ts}".format(
     ts=delay_sum_seconds))
-# TODO add a toolbox.exit(), rename toolbox to main
-temp_file.close()  # Cleanup temp SQL
-exit(exitcode)  # Exit with status
+
+toolkit.exit(exitcode)

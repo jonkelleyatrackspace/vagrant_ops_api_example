@@ -22,7 +22,7 @@ toolkit = ToolKit()  # <class> Misc. functions
 # *  SQL SENTENCE  *
 # ******************
 sql = ("\\x on\n SELECT pg_is_in_recovery();")
-sql_code = temp_file.write(sql)
+sql_code = toolkit.write_temp(sql)
 
 
 # ****************
@@ -100,6 +100,4 @@ else:
     print("jojo_return_value error_reason_indicator={error}".format(
         error=error_hint))
 
-# TODO add a toolbox.exit(), rename toolbox to main
-temp_file.close()  # Cleanup temp SQL
-exit(exitcode)  # Exit with status
+toolkit.exit(exitcode)

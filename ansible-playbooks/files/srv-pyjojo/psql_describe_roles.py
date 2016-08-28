@@ -10,10 +10,9 @@
 # -- jojo --
 
 from os import linesep
-from common import MkTemp, CmdRun, ToolKit
+from common import CmdRun, ToolKit
 
 # Spawn Instances
-temp_file = MkTemp()   # <class> Do /tmp/ build/teardown
 run = CmdRun()   # <class> Run
 toolkit = ToolKit()  # <class> Misc. functions
 
@@ -22,7 +21,9 @@ toolkit = ToolKit()  # <class> Misc. functions
 # *  SQL SENTENCE  *
 # ******************
 sql = ("\du")
-sql_code = temp_file.write(sql)
+sql_code = toolkit.write_temp(sql)
+
+
 
 
 # ****************
@@ -32,5 +33,4 @@ output = run.sql(sql_code)
 print(output)
 print("jojo_return_value execution_status=ok")
 
-temp_file.close()  # Cleanup temp SQL
-exit(0)  # Exit with status
+toolkit.exit(0)

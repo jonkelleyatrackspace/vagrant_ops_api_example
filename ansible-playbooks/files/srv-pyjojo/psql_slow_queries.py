@@ -10,10 +10,9 @@
 # -- jojo --
 
 from os import linesep
-from common import MkTemp, CmdRun, ToolKit
+from common import CmdRun, ToolKit
 
 # Spawn Instances
-temp_file = MkTemp()   # <class> Do /tmp/ build/teardown
 run = CmdRun()        # <class> Run
 toolkit = ToolKit()  # <class> Misc. functions
 
@@ -28,7 +27,7 @@ sql = ("SELECT"
        " FROM pg_stat_activity WHERE query NOT LIKE '%pg_stat_activity%' "
        " ORDER BY xact_start;"
        )
-sql_code = temp_file.write(sql)
+sql_code = toolkit.write_temp(sql)
 
 
 # ****************
@@ -72,6 +71,4 @@ else:
     print("jojo_return_value error_reason_indicator={error}".format(
         error=error_hint))
 
-# TODO add a toolbox.exit(), rename toolbox to main
-temp_file.close()  # Cleanup temp SQL
-exit(exitcode)  # Exit with status
+toolkit.exit(exitcode)

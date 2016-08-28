@@ -22,7 +22,7 @@
 # -- jojo --
 
 from os import linesep
-from common import MkTemp, Sanitize, CmdRun
+from common import Sanitize, CmdRun
 from common import ToolKit, Constants
 from common import ParamHandle2 as Param
 
@@ -30,7 +30,6 @@ from common import ParamHandle2 as Param
 p = Param()                       # <class> Parameter manipulation
 real_escape_string = Sanitize()   # <class> Escape Routines
 toolkit = ToolKit()               # <class> Misc. functions
-temp_file = MkTemp()              # <class> Do /tmp/ build/teardown
 params = p.list()                 # <dict>   Input params list
 run = CmdRun()                    # <class> Runs the query
 
@@ -221,7 +220,7 @@ clean_sql = ("BEGIN; CREATE ROLE {username} WITH {connection_limit}{createuser}"
 )
 # Fail if SQL overruns 2000 bytes
 toolkit.fail_beyond_maxlength(maxlength=2000, string=clean_sql)
-sql_code = temp_file.write(clean_sql)
+sql_code = toolkit.write_temp(clean_sql)
 
 
 # ****************
@@ -280,6 +279,4 @@ else:
     print("jojo_return_value error_reason_indicator={error}".format(
         error=error_hint))
 
-# TODO add a toolbox.exit(), rename toolbox to main
-temp_file.close()  # Clean open filehandles
-exit(exitcode)  # Exit with status
+toolkit.exit(exitcode)

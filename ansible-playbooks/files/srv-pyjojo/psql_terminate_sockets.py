@@ -109,7 +109,7 @@ clean_sql = ("SELECT row_to_json(t)  FROM ("
              ") as t; ;"
              ).format(identifier=real_escape_string.sql(arg_identifier), key=real_escape_string.sql(arg_key))
 toolkit.fail_beyond_maxlength(maxlength=1000, string=clean_sql)
-sql_code = temp_file.write(clean_sql)
+sql_code = toolkit.write_temp(clean_sql)
 
 
 # ****************
@@ -175,5 +175,4 @@ else:
     print("jojo_return_value error_reason_indicator={error}".format(
         error=error_hint))
 
-temp_file.close()  # Cleanup temp SQL
-exit(0)  # Exit with status
+toolkit.exit(exitcode)
