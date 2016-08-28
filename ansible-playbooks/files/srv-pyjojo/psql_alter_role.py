@@ -35,6 +35,8 @@ run            = CmdRun()          # <class> Runs the query
 # ************************************
 # *  DEFINE PARAMETERS AND VALIDATE  *
 # ************************************
+sanitized_arguement = {}
+
 define_param   = "ROLE"
 p              = ParamHandle2()
 p.value        = params[define_param]
