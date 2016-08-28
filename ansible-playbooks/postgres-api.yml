@@ -48,4 +48,4 @@
       become: yes
     - include: tasks/generic/prereqs.yml
     - include: tasks/postgres-api/software_deps.yml
-    - include: tasks/jojo/install.yml
+    - include: tasks/pyjojo/install.yml
