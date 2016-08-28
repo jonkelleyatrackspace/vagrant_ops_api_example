@@ -1,5 +1,6 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
+
 # Copyright 2016, Jonathan Kelley  
 # License Apache Commons v2 
 
@@ -34,6 +35,7 @@ class CmdRun():
     def sql(self, sql_code):
         """
         Runs a set of SQL code using run(), and returns the run() object back.
+
         :param sql_code: <STR> SQL query to run
         :return <FUNCTION self.run>:
         """
@@ -41,11 +43,38 @@ class CmdRun():
             sql=sql_code)
         return self.run(sql_shell)
 
-    def ansible(self, x):
+    def ansible(self, ansible_opts):
         """
+        Supports running external ansible-playbook commands.
+        Each k,v in a dictionary passed to ansible_opts will be
+        added as --k=v to the commandline.
+        Special exceptions for playbook and append_args as those
+        are not exactly straight up flags.
+
+        :param ansible_opts: <dict> with k,v of options to use
+        :return <FUNCTION self.run>:
         """
-        sql_shell = "ansible-playbook {x}".format(x=x)
-        return False
+        args = ""
+        for k, v in ansible_opts.iteritems():
+            if k == "playbook":
+                args = " {prefix} {opt} ".format(prefix=args,opt=v)
+            elif k == "append_args":
+                args = " {prefix} {args} ".format(prefix=args,args=v)
+            elif k == "--extra-vars":
+                args = "{prefix} {arg}='{opt}' ".format(prefix=args,arg=k,opt=v)
+            else:
+                args = "{prefix} {arg}={opt} ".format(prefix=args,arg=k,opt=v)
+
+        command = ('/usr/bin/ansible-playbook {args}').format(args=args)
+        mktmp = MkTemp()
+
+        proxyscript = ("#!/bin/bash\n\n{cmd}").format(cmd=command)
+        sh = mktmp.write(proxyscript)
+
+        exe = "/bin/bash {tmpfname}".format(tmpfname=sh)
+        result = self.run(exe)
+        mktmp.close() 
+        return result
 
     def fabric(self, x):
         """
@@ -70,10 +99,10 @@ class MkTemp():
         """
         Sets permissions on the tmpfiles for reasonable security.
         """
-        uid = getpwnam('postgres').pw_uid
-        gid = getpwnam('postgres').pw_gid
-        chmod(fname, 0600)      # o+rw
-        chown(fname, uid, gid)  # chown postgres: fname
+        #uid = getpwnam('postgres').pw_uid
+        #gid = getpwnam('postgres').pw_gid
+        chmod(fname, 0777)      # o+rw
+        #chown(fname, uid, gid)  # chown postgres: fname
 
     def write(self, content):
         """
@@ -98,6 +127,8 @@ class Constants():
     # commands, but they will be truncated.  By default,
     # NAMEDATALEN is 64 so the maximum identifier length
     # is 63 bytes.
+    LINUX_MAX_FILE_NAME_LENGTH = 255
+    LINUX_MAX_FILE_PATH_LENGTH = 4096
     POSTGRES_NAMEDATA_LEN = 64
 
     # User selectable socket limits can go this high
@@ -337,16 +368,18 @@ class ParamHandle2():
            as well as helping with params, such as ensuring required 
            env params exist, or that they are not '' (nil)
     """
-    name       = ""    # This should be set to the key name of a param
-    value      = ""    # This should be set to the value of a param
-    max_length = -1    # This should be set to a maximum parameter length
-    require    = False # This should be set to true to fail if inputy is detected
-    sanitizer  = None  # This should be set to the type of sanitizer you wish to use
-                       # this will be used to return a sanitized string.
-    isbool     = "N0"  # Special marker to determine if a isbool is used.
-                       # if this value isn't N0 it is assumed to be True/False
-                       #  or an overriden setting.
-
+    name       = ""        # Key name of the param  EXAMPLE: "database_host"
+    value      = ""        # Value of the parameter EXAMPLE: "8.8.8.8"
+    max_length = -1        # Maximum len() for value without erroring (-1 is infinite)
+    require    = False     # Generate API error(s) if value is not supplied. 
+    sanitizer  = None      # Set to the string sanitizer used before returning the
+                           # use input. Can be None, 'sql', 'nonalphanumeric'
+    UTF_00AC   = unichr(172)*4 # DEFINE UTF-8 character U+00AC NOT SIGN
+    isbool     = UTF_00AC  # Special marker to determine if isbool is used.
+                           # Valid states are True, False, None so I am using
+                           # UTF-8 character as a 4th default state.
+    default_value = False  # If this property is set, auto-return this value if the
+                           # user neglects to define this parameter.
     def __init__(self):
         self.err = ToolKit()
 
@@ -357,7 +390,7 @@ class ParamHandle2():
         given the correct options will sanitize the string.
         """
 
-        env = Environment()
+        env = Environment() # Instance the shell environment class
         return env.params()
 
     def get(self):
@@ -366,17 +399,30 @@ class ParamHandle2():
         It will first pass the strings through a sanitizer, which if 
         given the correct options will sanitize the string.
         """
+
         if self.value == "":
-            raise_error(keyname=self.name, value=self.value, expected_msg="ARG CLASS MISSING VALUE")
+            self.raise_error(keyname=self.name, value=self.value, expected_msg="ARG CLASS MISSING VALUE")
         if self.name == "":
-            raise_error(keyname=self.name, value=self.value, expected_msg="ARG CLASS MISSING NAME")
+            self.raise_error(keyname=self.name, value=self.value, expected_msg="ARG CLASS MISSING NAME")
         if self.require:
             self.fail_if_nil(self.name, self.value)
         if self.max_length > 1:
             if len(self.value) > self.max_length:
-                msg = "< {max}".format(max=self.max_length)
-                raise_error(keyname=self.name, value=self.value, expected_msg=msg)
+                msg = "less than {max} characters".format(max=self.max_length)
+                self.raise_error(keyname=self.name, value=self.value, expected_msg=msg)
 
+        # Check for overrides that will return a default value if the input is nil.
+        if self.default_value:
+            if self.is_nil(self.value):
+                return self.default_value
+
+        # Check for overrides that convert the return into a boolean or custom value.
+        if self.isbool != self.UTF_00AC:
+            # We can't use False or None since those might be used
+            #  by the user.
+            return self.isbool
+
+        # Normal returns, sanitize (if defined) and return the parameter.
         sanitize = Sanitize()
         if not self.sanitizer:
             sanitizedparam = self.value
@@ -384,11 +430,6 @@ class ParamHandle2():
             sanitizedparam = Sanitize.sql(self.value)
         elif self.sanitizer == "nonalphanumeric":
             sanitizedparam = Sanitize.non_alphanumeric_text(self.value)
-
-        if self.isbool != "N0":
-            # We can't use False or None since those might be used
-            #  by the user.
-            sanitizedparam = self.isbool
 
         return sanitizedparam
 
