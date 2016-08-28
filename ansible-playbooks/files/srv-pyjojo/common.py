@@ -58,15 +58,16 @@ class CmdRun():
         args = ""
         for k, v in ansible_opts.iteritems():
             if k == "playbook":
-                args = " {prefix} {opt} ".format(prefix=args, opt=v)
+                args = " {ansible} {opt} ".format(ansible=args, opt=v)
             elif k == "append_args":
-                args = " {prefix} {args} ".format(prefix=args, args=v)
+                args = " {ansible} {args} ".format(ansible=args, args=v)
             elif k == "--extra-vars":
-                args = "{prefix} {arg}='{opt}' ".format(
-                    prefix=args, arg=k, opt=v)
+                args = "{ansible} {arg}='{opt}' ".format(ansible=args, arg=k, opt=v)
+            elif k.startswith('-') and v == ''
+                # If value is empty then it's a -flag or --flag switch.
+                args = "{ansible} {switch} ".format(ansible=args, switch=v)
             else:
-                args = "{prefix} {arg}={opt} ".format(
-                    prefix=args, arg=k, opt=v)
+                args = "{ansible} {arg}={opt} ".format(ansible=args, arg=k, opt=v)
 
         command = ('/usr/bin/ansible-playbook {args}').format(args=args)
         mktmp = MkTemp()
@@ -94,10 +95,13 @@ class CmdRun():
         args = ""
         for k, v in ansible_opts.iteritems():
             if k == "command":
-                args = " {fabcmd} {arg1} ".format(args=fabcmd, arg1=v)
+                args = " {fab} {arg1} ".format(fab=fabcmd, arg1=v)
+            elif k.startswith('-') and v == ''
+                # If value is empty then it's a -flag or --flag switch.
+                args = "{fab} {switch} ".format(fab=fabcmd, switch=v)
             else:
-                args = "{fabcmd} {arg}={opt} ".format(
-                    fabcmd=args, arg=k, opt=v)
+                args = "{fab} {arg}={opt} ".format(
+                    fab=args, arg=k, opt=v)
 
         command = ('/usr/local/bin/fab {args}').format(args=args)
         mktmp = MkTemp()
