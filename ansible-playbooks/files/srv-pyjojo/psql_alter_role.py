@@ -1,7 +1,7 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
-# Copyright 2016, Jonathan Kelley  
-# License Apache Commons v2 
+# Copyright 2016, Jonathan Kelley
+# License Apache Commons v2
 # -- jojo --
 # description: Perform ALTER on a ROLE
 # param: role - Your ROLE name
@@ -21,127 +21,128 @@
 
 from os import linesep
 from common import MkTemp, Sanitize, CmdRun
-from common import ToolKit, Constants, ParamHandle2
+from common import ToolKit, Constants
+from common import ParamHandle2 as Param
 
 # Spawn Instances
-parameter      = ParamHandle2()    # <class> Parameter manipulation
-real_escape_string = Sanitize()    # <class> Escape Routines
-toolkit        = ToolKit()         # <class> Misc. functions
-temp_file      = MkTemp()          # <class> Do /tmp/ build/teardown
-params         = parameter.list()  # <dict>  Input params list
-run            = CmdRun()          # <class> Runs the query
+p = Param()                       # <class> Parameter manipulation
+real_escape_string = Sanitize()   # <class> Escape Routines
+toolkit = ToolKit()               # <class> Misc. functions
+temp_file = MkTemp()              # <class> Do /tmp/ build/teardown
+params = p.list()                 # <dict>   Input params list
+run = CmdRun()                    # <class> Runs the query
 
 
 # ************************************
 # *  DEFINE PARAMETERS AND VALIDATE  *
 # ************************************
-sanitized_arguement = {}
+sanitized_arguement = {} # The actual API params we pass to psql
 
-define_param   = "ROLE"
-p              = ParamHandle2()
-p.value        = params[define_param]
-p.name         = define_param
-p.max_length   = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier   = "sql"
-p.require      = True
-sanitized_arguement[define_param] = p.get()
+param = "role".upper()
+role = Param()
+role.value = params[param]
+role.name = param
+role.max_length = Constants.POSTGRES_NAMEDATA_LEN
+role.sanitizier = "sql"
+role.require = True
+sanitized_arguement[param] = role.get()
 
-define_param   = "CREATEROLE"
-sql_when_true  = " {verb} ".format(verb=define_param)
-sql_when_false = " NO{verb} ".format(verb=define_param)
-p              = ParamHandle2()
-p.value        = params[define_param]
-p.name         = define_param
-p.max_length   = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier   = "sql"
-p.convert_to_bool(sql_when_true,sql_when_false,sql_when_false)
-sanitized_arguement[define_param] = p.get()
+param = "createrole".upper()
+sql_when_true = " {verb} ".format(verb=param)
+sql_when_false = " NO{verb} ".format(verb=param)
+createrole = Param()
+createrole.value = params[param]
+createrole.name = param
+createrole.max_length = Constants.POSTGRES_NAMEDATA_LEN
+createrole.sanitizier = "sql"
+createrole.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
+sanitized_arguement[param] = createrole.get()
 
-define_param   = "CREATEUSER"
-sql_when_true  = " {verb} ".format(verb=define_param)
-sql_when_false = " NO{verb} ".format(verb=define_param)
-p              = ParamHandle2()
-p.value        = params[define_param]
-p.name         = define_param
-p.max_length   = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier   = "sql"
-p.convert_to_bool(sql_when_true,sql_when_false,sql_when_false)
-sanitized_arguement[define_param] = p.get()
+param = "createuser".upper()
+sql_when_true = " {verb} ".format(verb=param)
+sql_when_false = " NO{verb} ".format(verb=param)
+createuser = Param()
+createuser.value = params[param]
+createuser.name = param
+createuser.max_length = Constants.POSTGRES_NAMEDATA_LEN
+createuser.sanitizier = "sql"
+createuser.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
+sanitized_arguement[param] = createuser.get()
 
-define_param   = "CREATEDB"
-sql_when_true  = " {verb} ".format(verb=define_param)
-sql_when_false = " NO{verb} ".format(verb=define_param)
-p              = ParamHandle2()
-p.value        = params[define_param]
-p.name         = define_param
-p.max_length   = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier   = "sql"
-p.convert_to_bool(sql_when_true,sql_when_false,sql_when_false)
-sanitized_arguement[define_param] = p.get()
+param = "createdb".upper()
+sql_when_true = " {verb} ".format(verb=param)
+sql_when_false = " NO{verb} ".format(verb=param)
+createdb = Param()
+createdb.value = params[param]
+createdb.name = param
+createdb.max_length = Constants.POSTGRES_NAMEDATA_LEN
+createdb.sanitizier = "sql"
+createdb.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
+sanitized_arguement[param] = createdb.get()
 
-define_param   = "INHERIT"
-sql_when_true  = " {verb} ".format(verb=define_param)
-sql_when_false = " NO{verb} ".format(verb=define_param)
-p              = ParamHandle2()
-p.value        = params[define_param]
-p.name         = define_param
-p.max_length   = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier   = "sql"
-p.convert_to_bool(sql_when_true,sql_when_false,sql_when_false)
-sanitized_arguement[define_param] = p.get()
+param = "inherit".upper()
+sql_when_true = " {verb} ".format(verb=param)
+sql_when_false = " NO{verb} ".format(verb=param)
+inherit = Param()
+inherit.value = params[param]
+inherit.name = param
+inherit.max_length = Constants.POSTGRES_NAMEDATA_LEN
+inherit.sanitizier = "sql"
+inherit.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
+sanitized_arguement[param] = inherit.get()
 
-define_param   = "LOGIN"
-sql_when_true  = " {verb} ".format(verb=define_param)
-sql_when_false = " NO{verb} ".format(verb=define_param)
-p              = ParamHandle2()
-p.value        = params[define_param]
-p.name         = define_param
-p.max_length   = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier   = "sql"
-p.convert_to_bool(sql_when_true,sql_when_false,sql_when_false)
-sanitized_arguement[define_param] = p.get()
+param = "login".upper()
+sql_when_true = " {verb} ".format(verb=param)
+sql_when_false = " NO{verb} ".format(verb=param)
+login = Param()
+login.value = params[param]
+login.name = param
+login.max_length = Constants.POSTGRES_NAMEDATA_LEN
+login.sanitizier = "sql"
+login.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
+sanitized_arguement[param] = login.get()
 
-define_param   = "ROLENAME"
-sql_when_true  = " IN ROLE {rolename} ".format(rolename=params[define_param])
+param = "rolename".upper()
+sql_when_true = " IN ROLE {rolename} ".format(rolename=params[param])
 sql_when_false = ""
-p              = ParamHandle2()
-p.value        = params[define_param]
-p.name         = define_param
-p.max_length   = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier   = "sql"
-p.set_value_if_defined(sql_when_true, sql_when_false)
-sanitized_arguement[define_param] = p.get()
+rolename = Param()
+rolename.value = params[param]
+rolename.name = param
+rolename.max_length = Constants.POSTGRES_NAMEDATA_LEN
+rolename.sanitizier = "sql"
+rolename.set_value_if_defined(sql_when_true, sql_when_false)
+sanitized_arguement[param] = rolename.get()
 
-define_param   = "GROUPNAME"
-sql_when_true  = " IN GROUP {groupname} ".format(groupname=params[define_param])
+param = "groupname".upper()
+sql_when_true = " IN GROUP {groupname} ".format(groupname=params[param])
 sql_when_false = ""
-p              = ParamHandle2()
-p.value        = params[define_param]
-p.name         = define_param
-p.max_length   = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier   = "sql"
-p.set_value_if_defined(sql_when_true, sql_when_false)
-sanitized_arguement[define_param] = p.get()
+groupname = Param()
+groupname.value = params[param]
+groupname.name = param
+groupname.max_length = Constants.POSTGRES_NAMEDATA_LEN
+groupname.sanitizier = "sql"
+groupname.set_value_if_defined(sql_when_true, sql_when_false)
+sanitized_arguement[param] = groupname.get()
 
-define_param   = "CONNECTION_LIMIT"
-p              = ParamHandle2()
-p.value        = params[define_param]
-p.name         = define_param
-p.max_length   = 3
-p.sanitizier   = "sql"
-sanitized_arguement[define_param] = p.get()
+param = "connection_limit".upper()
+connection_limit = Param()
+connection_limit.value = params[param]
+connection_limit.name = param
+connection_limit.max_length = 3
+connection_limit.sanitizier = "sql"
+sanitized_arguement[param] = connection_limit.get()
 
-define_param   = "CONNECTION_LIMIT_BUST"
-p              = ParamHandle2()
-p.value        = params[define_param]
-p.name         = define_param
-p.sanitizier   = "sql"
-p.set_value_if_defined() # Set to True is defined for bool comparisons
-sanitized_arguement[define_param] = p.get()
+param = "connection_limit_bust".upper()
+connection_limit_bust = Param()
+connection_limit_bust.value = params[param]
+connection_limit_bust.name = param
+connection_limit_bust.sanitizier = "sql"
+connection_limit_bust.set_value_if_defined()  # Set to True is defined for bool comparisons
+sanitized_arguement[param] = connection_limit_bust.get()
 
 # Handling connection limit parsing requires advanced work
 #  While imposing limits and limit busting...
-phelper = ParamHandle2() # Using the parameter instance tools for validation.
+phelper = Param()  # Using the parameter instance tools for validation.
 if phelper.is_nil(sanitized_arguement['CONNECTION_LIMIT']):
     # If no input, we plan on just setting 10 sockets.
     connection_limit = 10
@@ -196,7 +197,6 @@ toolkit.fail_beyond_maxlength(maxlength=2000, string=clean_sql)
 sql_code = temp_file.write(clean_sql)
 
 
-
 # ****************
 # *  SQL RUNNER  *
 # ****************
@@ -217,19 +217,19 @@ for line in output.split(linesep):
     if line == "ROLLBACK":
         toolkit.print_stderr(line)
         error_scenario_1 = True
-        exitcode         = 1  # Rollbacks should flag an API error code.
+        exitcode = 1  # Rollbacks should flag an API error code.
     if "psql:/tmp/" in line and " ERROR:  " in line:
         toolkit.print_stderr(line)
         error_scenario_2 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
     if ("ERROR:" in line) and (" role " in line) and ("does not exist" in line):
         toolkit.print_stderr(line)
         error_scenario_3 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
     if " FATAL: " in line:
         toolkit.print_stderr(line)
         error_scenario_4 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
 
 # Report Output
 if exitcode == 0:

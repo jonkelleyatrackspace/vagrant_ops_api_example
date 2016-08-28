@@ -1,6 +1,6 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
-# Copyright 2016, Jonathan Kelley  
+# Copyright 2016, Jonathan Kelley
 # License Apache Commons v2
 # -- jojo --
 # description: A proof of concept that can trigger an ansible playbook called package_version.yml to get info about a specific package version
@@ -9,28 +9,27 @@
 # lock: False
 # -- jojo --
 
-from common import CmdRun, Constants, ParamHandle2
-import json
+from common import CmdRun, Constants
+from common import ParamHandle2 as Param
 
 # Spawn Instances
-parameter2  = ParamHandle2()    # <class> Parameter manipulation
-run         = CmdRun()          # <class> Runs the query
-params      = parameter2.list() # <dict>  A dict of params 
-
+parameter2 = Param()    # <class> Parameter manipulation
+run = CmdRun()          # <class> Runs the query
+params = parameter2.list()  # <dict>  A dict of params
 
 
 # ************************************
 # *  DEFINE PARAMETERS AND VALIDATE  *
 # ************************************
-arguement = {}
+arguement = {} # The actual API params we pass to psql
 
-define_param       = "PACKAGE"
-p                  = ParamHandle2()
-p.value            = params[define_param]
-p.name             = define_param
-p.require          = True
-p.max_length       = Constants.LINUX_MAX_FILE_NAME_LENGTH
-arguement[define_param] = {'package': p.get()} # Define as extra-vars dict item
+param = "package".upper()
+package = Param()
+package.value = params[param]
+package.name = param
+package.require = True
+package.max_length = Constants.LINUX_MAX_FILE_NAME_LENGTH
+arguement[param] = {'package': package.get()}
 
 
 # ****************************
@@ -42,12 +41,13 @@ arguement[define_param] = {'package': p.get()} # Define as extra-vars dict item
 #  - ansible_opts['append_args'] which value should include any appendable arg like -vvvv
 ansible_opts = {}
 
-ansible_opts['playbook']         = '/opt/playbooks/ansible-playbooks/package_version.yml'
-ansible_opts['append_args']      = '-v'
-ansible_opts['--limit']          = '\"vagrant\"'
+ansible_opts[
+    'playbook'] = '/opt/playbooks/ansible-playbooks/package_version.yml'
+ansible_opts['append_args'] = '-v'
+ansible_opts['--limit'] = '\"vagrant\"'
 ansible_opts['--inventory-file'] = '/opt/playbooks/ansible-hosts'
-ansible_opts['--user']           = 'vagrant'
-ansible_opts['--extra-vars']     = json.dumps(arguement['PACKAGE'])
+ansible_opts['--user'] = 'vagrant'
+ansible_opts['--extra-vars'] = json.dumps(arguement['PACKAGE'])
 
 
 # *****************

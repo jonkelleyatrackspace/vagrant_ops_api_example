@@ -1,7 +1,7 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
-# Copyright 2016, Jonathan Kelley  
-# License Apache Commons v2 
+# Copyright 2016, Jonathan Kelley
+# License Apache Commons v2
 # -- jojo --
 # description: Creates a specified database with specified role and super-role, as well as a specified super_svc and _svc account pair. Uses PostgreSQL+Database+References+and+Standards.
 # param: application - The name of your application. It will be application_role and accounts will be named after it.
@@ -18,101 +18,104 @@
 
 from os import linesep
 from common import MkTemp, Sanitize, CmdRun
-from common import ToolKit, Constants, ParamHandle2
+from common import ToolKit, Constants
+from common import ParamHandle2 as Param
 
 # Spawn Instances
-parameter     = ParamHandle2()    # <class> Parameter manipulation
+p = Param()                       # <class> Parameter manipulation
 real_escape_string = Sanitize()   # <class> Escape Routines
-toolkit       = ToolKit()         # <class> Misc. functions
-temp_file     = MkTemp()          # <class> Do /tmp/ build/teardown
-params        = parameter.list()  # <dict>  Input params list
-run           = CmdRun()          # <class> Runs the query
+toolkit = ToolKit()               # <class> Misc. functions
+temp_file = MkTemp()              # <class> Do /tmp/ build/teardown
+params = p.list()                 # <dict>   Input params list
+run = CmdRun()                    # <class> Runs the query
 
 
 # ************************************
 # *  DEFINE PARAMETERS AND VALIDATE  *
 # ************************************
-sanitized_arguement = {}
+sanitized_arguement = {} # The actual API params we pass to psql
 
-define_param = "APPLICATION"
-p            = ParamHandle2()
-p.value      = params[define_param]
-p.name       = define_param
-p.max_length = Constants.POSTGRES_NAMEDATA_LEN
-p.require    = True
-p.sanitizier = "sql"
-sanitized_arguement[define_param] = p.get()
+param = "application".upper()
+application = Param()
+application.value = params[param]
+application.name = param
+application.max_length = Constants.POSTGRES_NAMEDATA_LEN
+application.require = True
+application.sanitizier = "sql"
+sanitized_arguement[param] = application.get()
 
-define_param = "SUPER_PASSWORD"
-p            = ParamHandle2()
-p.value      = params[define_param]
-p.name       = define_param
-p.max_length = Constants.POSTGRES_NAMEDATA_LEN
-p.require    = True
-p.sanitizier = "sql"
-sanitized_arguement[define_param] = p.get()
+param = "super_password".upper()
+super_password = Param()
+super_password.value = params[param]
+super_password.name = param
+super_password.max_length = Constants.POSTGRES_NAMEDATA_LEN
+super_password.require = True
+super_password.sanitizier = "sql"
+sanitized_arguement[param] = super_password.get()
 
 
-define_param = "SVC_PASSWORD"
-p            = ParamHandle2()
-p.value      = params[define_param]
-p.name       = define_param
-p.max_length = Constants.POSTGRES_NAMEDATA_LEN
-p.require    = True
-p.sanitizier = "sql"
-sanitized_arguement[define_param] = p.get()
+param = "svc_password".upper()
+svc_password = Param()
+svc_password.value = params[param]
+svc_password.name = param
+svc_password.max_length = Constants.POSTGRES_NAMEDATA_LEN
+svc_password.require = True
+svc_password.sanitizier = "sql"
+sanitized_arguement[param] = svc_password.get()
 
-define_param = "SUPER_SVC_LOGIN"
-p            = ParamHandle2()
-p.value      = params[define_param]
-p.name       = define_param
-p.max_length = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier = "sql"
-sanitized_arguement[define_param] = p.get()
+param = "super_svc_login".upper()
+super_svc_login = Param()
+super_svc_login.value = params[param]
+super_svc_login.name = param
+super_svc_login.max_length = Constants.POSTGRES_NAMEDATA_LEN
+super_svc_login.sanitizier = "sql"
+sanitized_arguement[param] = super_svc_login.get()
 
-define_param = "SUPER_SVC_LOGIN"
-sql_when_true  = " LOGIN ".format(verb=define_param)
-sql_when_false = " NOLOGIN ".format(verb=define_param)
-p            = ParamHandle2()
-p.value      = params[define_param]
-p.name       = define_param
-p.max_length = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier = "sql"
-p.convert_to_bool(sql_when_true,sql_when_false,sql_when_false)
-sanitized_arguement[define_param] = p.get()
+param = "super_svc_login".upper()
+sql_when_true = " LOGIN ".format(verb=param)
+sql_when_false = " NOLOGIN ".format(verb=param)
+super_svc_login = Param()
+super_svc_login.value = params[param]
+super_svc_login.name = param
+super_svc_login.max_length = Constants.POSTGRES_NAMEDATA_LEN
+super_svc_login.sanitizier = "sql"
+super_svc_login.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
+sanitized_arguement[param] = super_svc_login.get()
 
-define_param = "SUPER_MAXSOCK"
+param = "super_maxsock".upper()
 val_when_nil = " 3 "
-val_when_not = " {x} ".format(x=params[define_param])
-p            = ParamHandle2()
-p.value      = params[define_param]
-p.name       = define_param
-p.max_length = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier = "sql"
-p.set_value_if_undefined(custom_if_value=val_when_nil, custom_else_value=val_when_not)
-sanitized_arguement[define_param] = p.get()
+val_when_not = " {x} ".format(x=params[param])
+super_maxsock = Param()
+super_maxsock.value = params[param]
+super_maxsock.name = param
+super_maxsock.max_length = Constants.POSTGRES_NAMEDATA_LEN
+super_maxsock.sanitizier = "sql"
+super_maxsock.set_value_if_undefined(
+    custom_if_value=val_when_nil, custom_else_value=val_when_not)
+sanitized_arguement[param] = super_maxsock.get()
 
-define_param = "SVC_LOGIN"
-sql_when_true  = " LOGIN ".format(verb=define_param)
-sql_when_false = " NOLOGIN ".format(verb=define_param)
-p            = ParamHandle2()
-p.value      = params[define_param]
-p.name       = define_param
-p.max_length = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier = "sql"
-p.convert_to_bool(sql_when_true,sql_when_false,sql_when_false)
-sanitized_arguement[define_param] = p.get()
+param = "svc_login".upper()
+sql_when_true = " LOGIN ".format(verb=param)
+sql_when_false = " NOLOGIN ".format(verb=param)
+svc_login = Param()
+svc_login.value = params[param]
+svc_login.name = param
+svc_login.max_length = Constants.POSTGRES_NAMEDATA_LEN
+svc_login.sanitizier = "sql"
+svc_login.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
+sanitized_arguement[param] = svc_login.get()
 
-define_param = "SVC_MAXSOCK"
+param = "svc_maxsock".upper()
 val_when_nil = " 2 "
-val_when_not = " {x} ".format(x=params[define_param])
-p            = ParamHandle2()
-p.value      = params[define_param]
-p.name       = define_param
-p.max_length = Constants.POSTGRES_NAMEDATA_LEN
-p.sanitizier = "sql"
-p.set_value_if_undefined(custom_if_value=val_when_nil, custom_else_value=val_when_not)
-sanitized_arguement[define_param] = p.get()
+val_when_not = " {x} ".format(x=params[param])
+svc_maxsock = Param()
+svc_maxsock.value = params[param]
+svc_maxsock.name = param
+svc_maxsock.max_length = Constants.POSTGRES_NAMEDATA_LEN
+svc_maxsock.sanitizier = "sql"
+svc_maxsock.set_value_if_undefined(
+    custom_if_value=val_when_nil, custom_else_value=val_when_not)
+sanitized_arguement[param] = svc_maxsock.get()
 
 
 # ******************
@@ -177,23 +180,23 @@ for line in output.split(linesep):
     if ("ERROR:" in line) and (" role " in line) and ("already exists" in line):
         toolkit.print_stderr(line)
         error_scenario_1 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
     if ("ERROR:" in line) and (" database " in line) and ("already exists" in line):
         toolkit.print_stderr(line)
         error_scenario_2 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
     if (line == "ROLLBACK") or ("transaction is aborted, commands ignored" in line):
         toolkit.print_stderr(line)
         error_scenario_3 = True
-        exitcode         = 1  # Rollbacks should flag an API error code.
+        exitcode = 1  # Rollbacks should flag an API error code.
     if ("psql:/tmp/" in line) and (" ERROR:  " in line):
         toolkit.print_stderr(line)
         error_scenario_4 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
     if " FATAL: " in line:
         toolkit.print_stderr(line)
         error_scenario_5 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
 
 # Report Output
 if exitcode == 0:

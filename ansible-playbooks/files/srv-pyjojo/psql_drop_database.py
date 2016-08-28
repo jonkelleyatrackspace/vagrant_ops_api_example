@@ -1,7 +1,7 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
-# Copyright 2016, Jonathan Kelley  
-# License Apache Commons v2 
+# Copyright 2016, Jonathan Kelley
+# License Apache Commons v2
 # -- jojo --
 # description: Deletes a database
 # param: database - Your DATABASE name
@@ -12,30 +12,31 @@
 
 from os import linesep
 from common import MkTemp, Sanitize, CmdRun
-from common import ToolKit, Constants, ParamHandle2
+from common import ToolKit, Constants
+from common import ParamHandle2 as Param
 
 # Spawn Instances
-parameter     = ParamHandle2()    # <class> Parameter manipulation
+p = Param()                       # <class> Parameter manipulation
 real_escape_string = Sanitize()   # <class> Escape Routines
-toolkit       = ToolKit()         # <class> Misc. functions
-temp_file     = MkTemp()          # <class> Do /tmp/ build/teardown
-params        = parameter.list()  # <dict>  Input params list
-run           = CmdRun()          # <class> Runs the query
+toolkit = ToolKit()               # <class> Misc. functions
+temp_file = MkTemp()              # <class> Do /tmp/ build/teardown
+params = p.list()                 # <dict>   Input params list
+run = CmdRun()                    # <class> Runs the query
 
 
 # ************************************
 # *  DEFINE PARAMETERS AND VALIDATE  *
 # ************************************
-sanitized_arguement = {}
+sanitized_arguement = {} # The actual API params we pass to psql
 
-define_param = "DATABASE"
-p            = ParamHandle2()
-p.value      = params[define_param]
-p.name       = define_param
-p.max_length = Constants.POSTGRES_NAMEDATA_LEN
-p.require    = True
-p.sanitizier = "sql"
-sanitized_arguement[define_param] = p.get()
+param = "database".upper()
+database = Param()
+database.value = params[param]
+database.name = param
+database.max_length = Constants.POSTGRES_NAMEDATA_LEN
+database.require = True
+database.sanitizier = "sql"
+sanitized_arguement[param] = database.get()
 
 
 # ******************
@@ -68,19 +69,19 @@ for line in output.split(linesep):
     if line == "ROLLBACK":
         toolkit.print_stderr(line)
         error_scenario_1 = True
-        exitcode         = 1  # Rollbacks should flag an API error code.
+        exitcode = 1  # Rollbacks should flag an API error code.
     if "psql:/tmp/" in line and " ERROR:  " in line:
         toolkit.print_stderr(line)
         error_scenario_2 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
     if ("ERROR:" in line) and (" database " in line) and ("does not exist" in line):
         toolkit.print_stderr(line)
         error_scenario_3 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
     if " FATAL: " in line:
         toolkit.print_stderr(line)
         error_scenario_4 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
 
 # Report Output
 if exitcode == 0:

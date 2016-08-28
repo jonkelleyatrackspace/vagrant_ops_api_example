@@ -1,7 +1,7 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
-# Copyright 2016, Jonathan Kelley  
-# License Apache Commons v2 
+# Copyright 2016, Jonathan Kelley
+# License Apache Commons v2
 # -- jojo --
 # description: Retrieve a list of roles.
 # http_method: get

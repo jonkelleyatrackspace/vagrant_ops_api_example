@@ -1,7 +1,7 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
-# Copyright 2016, Jonathan Kelley  
-# License Apache Commons v2 
+# Copyright 2016, Jonathan Kelley
+# License Apache Commons v2
 # -- jojo --
 # description: Show slave delay
 # http_method: get
@@ -53,11 +53,11 @@ for line in query_result.split(linesep):
     if ("psql:/tmp/" in line) and (" ERROR:  " in line):
         toolkit.print_stderr(line)
         error_scenario_1 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
     if " FATAL: " in line:
         toolkit.print_stderr(line)
         error_scenario_2 = True
-        exitcode         = 1  # Parse Errors should flag an API error code.
+        exitcode = 1  # Parse Errors should flag an API error code.
 
 if delay != "-NaN":
     secs = delay.split(':')[2]

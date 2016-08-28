@@ -1,8 +1,8 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright 2016, Jonathan Kelley  
-# License Apache Commons v2 
+# Copyright 2016, Jonathan Kelley
+# License Apache Commons v2
 
 from __future__ import print_function      # for print_stderr
 from sys import stderr                     # for print_stderr
@@ -10,9 +10,10 @@ from os import environ as env              # for paramaters
 from os import chmod, chown, unlink        # for tempfile
 from tempfile import NamedTemporaryFile    # for tempfile
 from pwd import getpwnam                   # for tempfile
-from subprocess import Popen, PIPE, STDOUT # for command runs
+from subprocess import Popen, PIPE, STDOUT  # for command runs
 from pwd import getpwnam                   # for tempfile
 import re as regex                         # for eval sanitize
+
 
 class CmdRun():
     """
@@ -57,13 +58,15 @@ class CmdRun():
         args = ""
         for k, v in ansible_opts.iteritems():
             if k == "playbook":
-                args = " {prefix} {opt} ".format(prefix=args,opt=v)
+                args = " {prefix} {opt} ".format(prefix=args, opt=v)
             elif k == "append_args":
-                args = " {prefix} {args} ".format(prefix=args,args=v)
+                args = " {prefix} {args} ".format(prefix=args, args=v)
             elif k == "--extra-vars":
-                args = "{prefix} {arg}='{opt}' ".format(prefix=args,arg=k,opt=v)
+                args = "{prefix} {arg}='{opt}' ".format(
+                    prefix=args, arg=k, opt=v)
             else:
-                args = "{prefix} {arg}={opt} ".format(prefix=args,arg=k,opt=v)
+                args = "{prefix} {arg}={opt} ".format(
+                    prefix=args, arg=k, opt=v)
 
         command = ('/usr/bin/ansible-playbook {args}').format(args=args)
         mktmp = MkTemp()
@@ -91,9 +94,10 @@ class CmdRun():
         args = ""
         for k, v in ansible_opts.iteritems():
             if k == "command":
-                args = " {fabcmd} {arg1} ".format(args=fabcmd,arg1=v)
+                args = " {fabcmd} {arg1} ".format(args=fabcmd, arg1=v)
             else:
-                args = "{fabcmd} {arg}={opt} ".format(fabcmd=args,arg=k,opt=v)
+                args = "{fabcmd} {arg}={opt} ".format(
+                    fabcmd=args, arg=k, opt=v)
 
         command = ('/usr/local/bin/fab {args}').format(args=args)
         mktmp = MkTemp()
@@ -125,7 +129,7 @@ class MkTemp():
         #uid = getpwnam('postgres').pw_uid
         #gid = getpwnam('postgres').pw_gid
         chmod(fname, 0777)      # o+rw
-        #chown(fname, uid, gid)  # chown postgres: fname
+        # chown(fname, uid, gid)  # chown postgres: fname
 
     def write(self, content):
         """
@@ -175,7 +179,7 @@ class Environment():
         """
         params = {}
         for param, value in env.iteritems():
-                params[param] = value
+            params[param] = value
 
         return params
 
@@ -384,6 +388,7 @@ class ParamHandle():
         else:
             return return_nomatch
 
+
 class ParamHandle2():
     """
     CLASS: Parameter handling. This class does a multitude of things,
@@ -391,18 +396,19 @@ class ParamHandle2():
            as well as helping with params, such as ensuring required 
            env params exist, or that they are not '' (nil)
     """
-    name       = ""        # Key name of the param  EXAMPLE: "database_host"
-    value      = ""        # Value of the parameter EXAMPLE: "8.8.8.8"
+    name = ""        # Key name of the param  EXAMPLE: "database_host"
+    value = ""        # Value of the parameter EXAMPLE: "8.8.8.8"
     max_length = -1        # Maximum len() for value without erroring (-1 is infinite)
-    require    = False     # Generate API error(s) if value is not supplied. 
-    sanitizer  = None      # Set to the string sanitizer used before returning the
-                           # use input. Can be None, 'sql', 'nonalphanumeric'
-    UTF_00AC   = unichr(172)*4 # DEFINE UTF-8 character U+00AC NOT SIGN
-    isbool     = UTF_00AC  # Special marker to determine if isbool is used.
-                           # Valid states are True, False, None so I am using
-                           # UTF-8 character as a 4th default state.
+    require = False     # Generate API error(s) if value is not supplied.
+    sanitizer = None      # Set to the string sanitizer used before returning the
+    # use input. Can be None, 'sql', 'nonalphanumeric'
+    UTF_00AC = unichr(172) * 4  # DEFINE UTF-8 character U+00AC NOT SIGN
+    isbool = UTF_00AC  # Special marker to determine if isbool is used.
+    # Valid states are True, False, None so I am using
+    # UTF-8 character as a 4th default state.
     default_value = False  # If this property is set, auto-return this value if the
-                           # user neglects to define this parameter.
+    # user neglects to define this parameter.
+
     def __init__(self):
         self.err = ToolKit()
 
@@ -413,7 +419,7 @@ class ParamHandle2():
         given the correct options will sanitize the string.
         """
 
-        env = Environment() # Instance the shell environment class
+        env = Environment()  # Instance the shell environment class
         return env.params()
 
     def get(self):
@@ -424,22 +430,27 @@ class ParamHandle2():
         """
 
         if self.value == "":
-            self.raise_error(keyname=self.name, value=self.value, expected_msg="ARG CLASS MISSING VALUE")
+            self.raise_error(keyname=self.name, value=self.value,
+                             expected_msg="ARG CLASS MISSING VALUE")
         if self.name == "":
-            self.raise_error(keyname=self.name, value=self.value, expected_msg="ARG CLASS MISSING NAME")
+            self.raise_error(keyname=self.name, value=self.value,
+                             expected_msg="ARG CLASS MISSING NAME")
         if self.require:
             self.fail_if_nil(self.name, self.value)
         if self.max_length > 1:
             if len(self.value) > self.max_length:
                 msg = "less than {max} characters".format(max=self.max_length)
-                self.raise_error(keyname=self.name, value=self.value, expected_msg=msg)
+                self.raise_error(keyname=self.name,
+                                 value=self.value, expected_msg=msg)
 
-        # Check for overrides that will return a default value if the input is nil.
+        # Check for overrides that will return a default value if the input is
+        # nil.
         if self.default_value:
             if self.is_nil(self.value):
                 return self.default_value
 
-        # Check for overrides that convert the return into a boolean or custom value.
+        # Check for overrides that convert the return into a boolean or custom
+        # value.
         if self.isbool != self.UTF_00AC:
             # We can't use False or None since those might be used
             #  by the user.
@@ -529,7 +540,7 @@ class ParamHandle2():
         returns True if a string is like a boolean true, False if not
         """
         if self.value.lower().startswith('t') or self.value == "1" or self.value.lower().startswith('y'):
-            self.isbool = custom_whentrue_value  
+            self.isbool = custom_whentrue_value
         elif self.value.lower().startswith('f') or self.value == "0" or self.value.lower().startswith('n'):
             self.isbool = custom_whenfalse_value
         else:
@@ -566,4 +577,3 @@ if __name__ == "__main__":
     # See scripts
     # curl -XGET http://localhost:3000/scripts/ -H "Content-Type:
     # application/json" | python -m json.tool
-
