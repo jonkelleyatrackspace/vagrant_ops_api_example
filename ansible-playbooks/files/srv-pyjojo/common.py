@@ -73,14 +73,37 @@ class CmdRun():
 
         exe = "/bin/bash {tmpfname}".format(tmpfname=sh)
         result = self.run(exe)
-        mktmp.close() 
+        mktmp.close()
         return result
 
-    def fabric(self, x):
+    def fabric(self, fab_opts):
         """
+        UNTESTED AT THE MOMENT (NO PROOF OF CONCEPT)
+        Support running external fabric scripts.
+        Each k,v in a dictionary passed to fab_opts will be added as
+        a --k=v to the commandline for ansible.
+        Special exception is made for 'command' as that's not a flag, but
+        the main argv1.
+
+        :param fab_opts: <dict> with k,v of options to use
+        :return <FUNCTION self.run>:
         """
-        sql_shell = "fab {x}".format(x=x)
-        return False
+        args = ""
+        for k, v in ansible_opts.iteritems():
+            if k == "command":
+                args = " {fabcmd} {arg1} ".format(args=fabcmd,arg1=v)
+            else:
+                args = "{fabcmd} {arg}={opt} ".format(fabcmd=args,arg=k,opt=v)
+
+        command = ('/usr/local/bin/fab {args}').format(args=args)
+        mktmp = MkTemp()
+        proxyscript = ("#!/bin/bash\n\n{cmd}").format(cmd=command)
+        sh = mktmp.write(proxyscript)
+
+        exe = "/bin/bash {tmpfname}".format(tmpfname=sh)
+        result = self.run(exe)
+        mktmp.close()
+        return result
 
     def web(self, x):
         """
