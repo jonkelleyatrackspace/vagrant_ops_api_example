@@ -13,7 +13,7 @@
 # param: svc_password - Svc account password
 # http_method: post
 # lock: False
-# tags: Postgres, PGaaS, cit-ops
+# tags: Postgres, CREATEAPPTIER, Psql
 # -- jojo --
 
 from os import linesep

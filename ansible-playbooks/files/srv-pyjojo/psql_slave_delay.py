@@ -6,7 +6,7 @@
 # description: Show slave delay
 # http_method: get
 # lock: False
-# tags: Postgres, PGaaS, cit-ops
+# tags: Postgres, Psql
 # -- jojo --
 
 from os import linesep

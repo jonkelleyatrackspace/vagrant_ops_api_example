@@ -11,7 +11,7 @@
 # param: client_address -  If supplied, will terminate all connections to this IP.
 # http_method: post
 # lock: False
-# tags: Postgres, PGaaS, cit-ops
+# tags: Postgres, Psql
 # -- jojo --
 
 from os import linesep

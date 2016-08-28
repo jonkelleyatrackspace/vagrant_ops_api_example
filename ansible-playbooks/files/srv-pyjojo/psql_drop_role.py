@@ -7,7 +7,7 @@
 # param: role - Your ROLE name
 # http_method: post
 # lock: False
-# tags: Postgres, PGaaS, cit-ops
+# tags: Postgres, Psql
 # -- jojo --
 
 from os import linesep

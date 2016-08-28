@@ -18,7 +18,7 @@
 # param: groupname -  Which group (only one currently) to add to
 # http_method: post
 # lock: False
-# tags: Postgres, PGaaS, cit-ops
+# tags: Postgres, CREATEROLE, Psql
 # -- jojo --
 
 from os import linesep

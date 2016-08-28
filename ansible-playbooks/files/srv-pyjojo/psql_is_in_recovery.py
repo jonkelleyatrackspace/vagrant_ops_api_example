@@ -6,7 +6,7 @@
 # description: Retrieve pg_is_in_recovery() status
 # http_method: get
 # lock: False
-# tags: Postgres, PGaaS, cit-ops
+# tags: Postgres, Psql
 # -- jojo --
 
 from os import linesep
