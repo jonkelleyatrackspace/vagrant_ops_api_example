@@ -24,8 +24,6 @@ sql = ("\du")
 sql_code = toolkit.write_temp(sql)
 
 
-
-
 # ****************
 # *  SQL RUNNER  *
 # ****************

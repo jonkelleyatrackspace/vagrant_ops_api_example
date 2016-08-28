@@ -10,10 +10,9 @@
 # -- jojo --
 
 from os import linesep
-from common import MkTemp, CmdRun, ToolKit
+from common import CmdRun, ToolKit
 
 # Spawn Instances
-temp_file = MkTemp()   # <class> Do /tmp/ build/teardown
 run = CmdRun()        # <class> Run
 toolkit = ToolKit()  # <class> Misc. functions
 

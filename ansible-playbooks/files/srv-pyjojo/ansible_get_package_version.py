@@ -11,9 +11,10 @@
 
 from common import CmdRun, Constants
 from common import ParamHandle2 as Param
+from json import dumps as decode
 
 # Spawn Instances
-parameter2 = Param()    # <class> Parameter manipulation
+parameter2 = Param()    # <class> Parame ter manipulation
 run = CmdRun()          # <class> Runs the query
 params = parameter2.list()  # <dict>  A dict of params
 
@@ -23,7 +24,7 @@ params = parameter2.list()  # <dict>  A dict of params
 # ************************************
 arguement = {} # The actual API params we pass to psql
 
-param = "package".upper()
+param = "package"
 package = Param()
 package.value = params[param]
 package.name = param
@@ -41,13 +42,12 @@ arguement[param] = {'package': package.get()}
 #  - ansible_opts['append_args'] which value should include any appendable arg like -vvvv
 ansible_opts = {}
 
-ansible_opts[
-    'playbook'] = '/opt/playbooks/ansible-playbooks/package_version.yml'
+ansible_opts['playbook'] = '/opt/playbooks/ansible-playbooks/package_version.yml'
 ansible_opts['append_args'] = '-v'
 ansible_opts['--limit'] = '\"vagrant\"'
 ansible_opts['--inventory-file'] = '/opt/playbooks/ansible-hosts'
 ansible_opts['--user'] = 'vagrant'
-ansible_opts['--extra-vars'] = json.dumps(arguement['PACKAGE'])
+ansible_opts['--extra-vars'] = decode(arguement['package'])
 
 
 # *****************
@@ -59,5 +59,6 @@ output = run.ansible(ansible_opts)
 # *************
 # *  RESULTS  *
 # *************
+print("jojo_return_value ansible_options={opt}".format(opt=ansible_opts))
 print(output)
 exit(0)

@@ -15,7 +15,7 @@
 # -- jojo --
 
 from os import linesep
-from common import MkTemp, Sanitize, CmdRun
+from common import Sanitize, CmdRun
 from common import ToolKit, Constants
 from common import ParamHandle2 as Param
 
@@ -23,7 +23,6 @@ from common import ParamHandle2 as Param
 p = Param()                       # <class> Parameter manipulation
 real_escape_string = Sanitize()   # <class> Escape Routines
 toolkit = ToolKit()               # <class> Misc. functions
-temp_file = MkTemp()              # <class> Do /tmp/ build/teardown
 params = p.list()                 # <dict>   Input params list
 run = CmdRun()                    # <class> Runs the query
 
@@ -33,7 +32,7 @@ run = CmdRun()                    # <class> Runs the query
 # ************************************
 sanitized_arguement = {} # The actual API params we pass to psql
 
-param = "database".upper()
+param = "database"
 database = Param()
 database.value = params[param]
 database.name = param
@@ -42,7 +41,7 @@ database.sanitizier = "sql"
 database.set_value_if_defined()
 sanitized_arguement[param] = database.get()
 
-param = "application".upper()
+param = "application"
 application = Param()
 application.value = params[param]
 application.name = param
@@ -51,7 +50,7 @@ application.sanitizier = "sql"
 application.set_value_if_defined()
 sanitized_arguement[param] = application.get()
 
-param = "user".upper()
+param = "user"
 user = Param()
 user.value = params[param]
 user.name = param
@@ -60,7 +59,7 @@ user.sanitizier = "sql"
 user.set_value_if_defined()
 sanitized_arguement[param] = user.get()
 
-param = "pid".upper()
+param = "pid"
 pid = Param()
 pid.value = params[param]
 pid.name = param
@@ -69,28 +68,28 @@ pid.sanitizier = "sql"
 pid.set_value_if_defined()
 sanitized_arguement[param] = pid.get()
 
-param = "client_address".upper()
+param = "client_address"
 clientaddr = Param()
 clientaddr.value = params[param]
 clientaddr.name = param
 clientaddr.max_length = Constants.POSTGRES_NAMEDATA_LEN
 clientaddr.sanitizier = "sql"
-clientaddr.set_value_if_defined()
+clientaddr.set_value_if_defined(True)
 sanitized_arguement[param] = clientaddr.get()
 
-if sanitized_arguement['DATABASE']:
+if sanitized_arguement['database']:
     arg_identifier = "datname"
     arg_key = database.value
-elif sanitized_arguement['APPLICATION']:
+elif sanitized_arguement['application']:
     arg_identifier = "application_name"
     arg_key = application.value
-elif sanitized_arguement['USER']:
+elif sanitized_arguement['user']:
     arg_identifier = "usename"
     arg_key = user.value
-elif sanitized_arguement['PID']:
+elif sanitized_arguement['pid']:
     arg_identifier = "procpid"
     arg_key = pid.value
-elif sanitized_arguement['CLIENT_ADDRESS']:
+elif sanitized_arguement['client_address']:
     arg_identifier = "client_addr"
     arg_key = clientaddr.value
 else:

@@ -34,7 +34,7 @@ run = CmdRun()                    # <class> Runs the query
 # ************************************
 sanitized_arguement = {} # The actual API params we pass to psql
 
-param = "application".upper()
+param = "application"
 application = Param()
 application.value = params[param]
 application.name = param
@@ -43,7 +43,7 @@ application.require = True
 application.sanitizier = "sql"
 sanitized_arguement[param] = application.get()
 
-param = "super_password".upper()
+param = "super_password"
 super_password = Param()
 super_password.value = params[param]
 super_password.name = param
@@ -53,7 +53,7 @@ super_password.sanitizier = "sql"
 sanitized_arguement[param] = super_password.get()
 
 
-param = "svc_password".upper()
+param = "svc_password"
 svc_password = Param()
 svc_password.value = params[param]
 svc_password.name = param
@@ -62,7 +62,7 @@ svc_password.require = True
 svc_password.sanitizier = "sql"
 sanitized_arguement[param] = svc_password.get()
 
-param = "super_svc_login".upper()
+param = "super_svc_login"
 super_svc_login = Param()
 super_svc_login.value = params[param]
 super_svc_login.name = param
@@ -70,9 +70,9 @@ super_svc_login.max_length = Constants.POSTGRES_NAMEDATA_LEN
 super_svc_login.sanitizier = "sql"
 sanitized_arguement[param] = super_svc_login.get()
 
-param = "super_svc_login".upper()
-sql_when_true = " LOGIN ".format(verb=param)
-sql_when_false = " NOLOGIN ".format(verb=param)
+param = "super_svc_login"
+sql_when_true = " LOGIN ".format(verb=param.upper())
+sql_when_false = " NOLOGIN ".format(verb=param.upper())
 super_svc_login = Param()
 super_svc_login.value = params[param]
 super_svc_login.name = param
@@ -81,7 +81,7 @@ super_svc_login.sanitizier = "sql"
 super_svc_login.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
 sanitized_arguement[param] = super_svc_login.get()
 
-param = "super_maxsock".upper()
+param = "super_maxsock"
 val_when_nil = " 3 "
 val_when_not = " {x} ".format(x=params[param])
 super_maxsock = Param()
@@ -93,9 +93,9 @@ super_maxsock.set_value_if_undefined(
     custom_if_value=val_when_nil, custom_else_value=val_when_not)
 sanitized_arguement[param] = super_maxsock.get()
 
-param = "svc_login".upper()
-sql_when_true = " LOGIN ".format(verb=param)
-sql_when_false = " NOLOGIN ".format(verb=param)
+param = "svc_login"
+sql_when_true = " LOGIN ".format(verb=param.upper())
+sql_when_false = " NOLOGIN ".format(verb=param.upper())
 svc_login = Param()
 svc_login.value = params[param]
 svc_login.name = param
@@ -104,7 +104,7 @@ svc_login.sanitizier = "sql"
 svc_login.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
 sanitized_arguement[param] = svc_login.get()
 
-param = "svc_maxsock".upper()
+param = "svc_maxsock"
 val_when_nil = " 2 "
 val_when_not = " {x} ".format(x=params[param])
 svc_maxsock = Param()
@@ -145,13 +145,13 @@ clean_sql = (
     "    IN ROLE  {myapplication}_role;\n"
     "COMMIT;\n"
 ).format(
-    myapplication=sanitized_arguement['APPLICATION'],
-    super_password=sanitized_arguement['SUPER_PASSWORD'],
-    super_login=sanitized_arguement['SUPER_SVC_LOGIN'],
-    super_maxsock=sanitized_arguement['SUPER_MAXSOCK'],
-    svc_login=sanitized_arguement['SVC_LOGIN'],
-    svc_maxsock=sanitized_arguement['SVC_MAXSOCK'],
-    svc_password=sanitized_arguement['SVC_PASSWORD']
+    myapplication=sanitized_arguement['application'],
+    super_password=sanitized_arguement['super_password'],
+    super_login=sanitized_arguement['super_svc_login'],
+    super_maxsock=sanitized_arguement['super_maxsock'],
+    svc_login=sanitized_arguement['svc_login'],
+    svc_maxsock=sanitized_arguement['svc_maxsock'],
+    svc_password=sanitized_arguement['svc_password']
 )
 toolkit.fail_beyond_maxlength(maxlength=1500, string=clean_sql)
 sql_code = toolkit.write_temp(clean_sql)

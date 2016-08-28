@@ -28,7 +28,7 @@ run = CmdRun()                    # <class> Runs the query
 # ************************************
 sanitized_arguement = {} # The actual API params we pass to psql
 
-param = "database".upper()
+param = "database"
 database = Param()
 database.value = params[param]
 database.name = param
@@ -42,7 +42,7 @@ sanitized_arguement[param] = database.get()
 # *  SQL SENTENCE  *
 # ******************
 clean_sql = ("DROP DATABASE {dbname};"
-             ).format(dbname=sanitized_arguement["DATABASE"])
+             ).format(dbname=sanitized_arguement["database"])
 toolkit.fail_beyond_maxlength(maxlength=2000, string=clean_sql)
 sql_code = toolkit.write_temp(clean_sql)
 

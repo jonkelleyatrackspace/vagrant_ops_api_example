@@ -23,7 +23,7 @@ Vagrant.configure("2") do |config|
   # ------------
   # Perform the api functions
   config.vm.define "postgres-api" do |api|
-    api.vm.hostname = "brds-api"
+    api.vm.hostname = "postgres"
     api.vm.network :private_network, ip: "172.21.12.12", auto_config: true
     api.vm.network "forwarded_port", guest: 80, host: "8080", auto_correct: true
 
@@ -43,7 +43,7 @@ Vagrant.configure("2") do |config|
   # -------------------
   # Perform the ansible proxy examples
   config.vm.define "skyscraper" do |api|
-    api.vm.hostname = "brds-api"
+    api.vm.hostname = "skyscraper"
     api.vm.network :private_network, ip: "172.21.12.13", auto_config: true
     api.vm.network "forwarded_port", guest: 80, host: "8080", auto_correct: true
 

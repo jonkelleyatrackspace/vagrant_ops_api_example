@@ -9,10 +9,10 @@
 # tags: Postgres, PGaaS, cit-ops
 # -- jojo --
 
-from common import MkTemp, CmdRun
+from common import ToolKit, CmdRun
 
 # Spawn Instances
-temp_file = MkTemp()   # <class> Do /tmp/ build/teardown
+toolkit = ToolKit()
 run = CmdRun()        # <class> Run
 
 
@@ -21,7 +21,6 @@ run = CmdRun()        # <class> Run
 # ******************
 sql = ("BEGIN; select * from pg_stat_activity; COMMIT;")
 sql_code = toolkit.write_temp(sql)
-
 
 # ****************
 # *  SQL RUNNER  *
@@ -34,4 +33,4 @@ output = run.sql(sql_code)
 # **********************
 print(output)
 print("jojo_return_value execution_status=ok")
-toolkit.exit(0)
+toolkit.exit()

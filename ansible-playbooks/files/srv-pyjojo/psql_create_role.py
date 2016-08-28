@@ -34,13 +34,12 @@ params = p.list()                 # <dict>   Input params list
 run = CmdRun()                    # <class> Runs the query
 
 
-
 # ************************************
 # *  DEFINE PARAMETERS AND VALIDATE  *
 # ************************************
 sanitized_arguement = {} # The actual API params we pass to psql
 
-param = "role".upper()
+param = "role"
 role = Param()
 role.value = params[param]
 role.name = param
@@ -49,7 +48,7 @@ role.require = True
 role.sanitizier = "sql"
 sanitized_arguement[param] = role.get()
 
-param = "password".upper()
+param = "password"
 password = Param()
 password.value = params[param]
 password.name = param
@@ -58,9 +57,9 @@ password.require = True
 password.sanitizier = "sql"
 sanitized_arguement[param] = password.get()
 
-param = "createrole".upper()
-sql_when_true = " {verb} ".format(verb=param)
-sql_when_false = " NO{verb} ".format(verb=param)
+param = "createrole"
+sql_when_true = " {verb} ".format(verb=param.upper())
+sql_when_false = " NO{verb} ".format(verb=param.upper())
 createrole = Param()
 createrole.value = params[param]
 createrole.name = param
@@ -69,9 +68,9 @@ createrole.sanitizier = "sql"
 createrole.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
 sanitized_arguement[param] = createrole.get()
 
-param = "createuser".upper()
-sql_when_true = " {verb} ".format(verb=param)
-sql_when_false = " NO{verb} ".format(verb=param)
+param = "createuser"
+sql_when_true = " {verb} ".format(verb=param.upper())
+sql_when_false = " NO{verb} ".format(verb=param.upper())
 createuser = Param()
 createuser.value = params[param]
 createuser.name = param
@@ -80,9 +79,9 @@ createuser.sanitizier = "sql"
 createuser.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
 sanitized_arguement[param] = createuser.get()
 
-param = "createdb".upper()
-sql_when_true = " {verb} ".format(verb=param)
-sql_when_false = " NO{verb} ".format(verb=param)
+param = "createdb"
+sql_when_true = " {verb} ".format(verb=param.upper())
+sql_when_false = " NO{verb} ".format(verb=param.upper())
 createdb = Param()
 createdb.value = params[param]
 createdb.name = param
@@ -91,9 +90,9 @@ createdb.sanitizier = "sql"
 createdb.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
 sanitized_arguement[param] = createdb.get()
 
-param = "inherit".upper()
-sql_when_true = " {verb} ".format(verb=param)
-sql_when_false = " NO{verb} ".format(verb=param)
+param = "inherit"
+sql_when_true = " {verb} ".format(verb=param.upper())
+sql_when_false = " NO{verb} ".format(verb=param.upper())
 inherit = Param()
 inherit.value = params[param]
 inherit.name = param
@@ -102,9 +101,9 @@ inherit.sanitizier = "sql"
 inherit.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
 sanitized_arguement[param] = inherit.get()
 
-param = "login".upper()
-sql_when_true = " {verb} ".format(verb=param)
-sql_when_false = " NO{verb} ".format(verb=param)
+param = "login"
+sql_when_true = " {verb} ".format(verb=param.upper())
+sql_when_false = " NO{verb} ".format(verb=param.upper())
 login = Param()
 login.value = params[param]
 login.name = param
@@ -113,9 +112,9 @@ login.sanitizier = "sql"
 login.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
 sanitized_arguement[param] = login.get()
 
-param = "encrypted".upper()
-sql_when_true = " {verb} ".format(verb=param)
-sql_when_false = " UN{verb} ".format(verb=param)
+param = "encrypted"
+sql_when_true = " {verb} ".format(verb=param.upper())
+sql_when_false = " UN{verb} ".format(verb=param.upper())
 encrypted = Param()
 encrypted.value = params[param]
 encrypted.name = param
@@ -124,7 +123,7 @@ encrypted.sanitizier = "sql"
 encrypted.convert_to_bool(sql_when_true, sql_when_false, sql_when_false)
 sanitized_arguement[param] = encrypted.get()
 
-param = "rolename".upper()
+param = "rolename"
 sql_when_true = " IN ROLE {rolename} ".format(rolename=params[param])
 sql_when_false = ""
 rolename = Param()
@@ -135,7 +134,7 @@ rolename.sanitizier = "sql"
 rolename.set_value_if_defined(sql_when_true, sql_when_false)
 sanitized_arguement[param] = rolename.get()
 
-param = "groupname".upper()
+param = "groupname"
 sql_when_true = " IN GROUP {groupname} ".format(groupname=params[param])
 sql_when_false = ""
 groupname = Param()
@@ -146,7 +145,7 @@ groupname.sanitizier = "sql"
 groupname.set_value_if_defined(sql_when_true, sql_when_false)
 sanitized_arguement[param] = groupname.get()
 
-param = "connection_limit".upper()
+param = "connection_limit"
 connection_limit = Param()
 connection_limit.value = params[param]
 connection_limit.name = param
@@ -154,48 +153,48 @@ connection_limit.max_length = 3
 connection_limit.sanitizier = "sql"
 sanitized_arguement[param] = connection_limit.get()
 
-param = "connection_limit_bust".upper()
+param = "connection_limit_bust"
 connection_limit_bust = Param()
 connection_limit_bust.value = params[param]
 connection_limit_bust.name = param
 connection_limit_bust.sanitizier = "sql"
 # Set to True is defined for bool comparisons
-connection_limit_bust.set_value_if_defined()
+connection_limit_bust.set_value_if_defined(True)
 sanitized_arguement[param] = connection_limit_bust.get()
 
 # Handling connection limit parsing requires advanced work
 #  While imposing limits and limit busting...
 phelper = Param()  # Using the parameter instance tools for validation.
-if phelper.is_nil(sanitized_arguement['CONNECTION_LIMIT']):
+if phelper.is_nil(sanitized_arguement['connection_limit']):
     # If no input, we plan on just setting 10 sockets.
     connection_limit = 10
-elif sanitized_arguement['CONNECTION_LIMIT_BUST']:
+elif sanitized_arguement['connection_limit_bust']:
     # Limit busting has been toggled
-    if int(sanitized_arguement['CONNECTION_LIMIT']) > Constants.POSTGRES_MAXIMUM_CONNECTION_LIMIT:
+    if int(sanitized_arguement['connection_limit']) > Constants.POSTGRES_MAXIMUM_CONNECTION_LIMIT:
         # If the proposed limit is not beyond the POSTGRES_MAXIMUM_CONNECTION_LIMIT, stop
         # We expect a smaller value.
         msg = "value <{max}".format(
             max=Constants.POSTGRES_MAXIMUM_CONNECTION_LIMIT)
         phelper.raise_error(
-            keyname='CONNECTION_LIMIT',
-            value=sanitized_arguement['CONNECTION_LIMIT'],
+            keyname='connection_limit',
+            value=sanitized_arguement['connection_limit'],
             expected_msg=msg
         )
     # Set the busted limit
-    connection_limit = sanitized_arguement['CONNECTION_LIMIT']
+    connection_limit = sanitized_arguement['connection_limit']
 else:
     # User-submitted connection limit (no limit busting)
-    if int(sanitized_arguement['CONNECTION_LIMIT']) > Constants.POSTGRES_CONNECTION_LIMIT:
+    if int(sanitized_arguement['connection_limit']) > Constants.POSTGRES_CONNECTION_LIMIT:
         # If the proposed limit is beyond the POSTGRES_CONNECTION_LIMIT, stop
         # We expect a smaller value.
         msg = "value <{max}".format(max=Constants.POSTGRES_CONNECTION_LIMIT)
         phelper.raise_error(
-            keyname='CONNECTION_LIMIT',
-            value=sanitized_arguement['CONNECTION_LIMIT'],
+            keyname='connection_limit',
+            value=sanitized_arguement['connection_limit'],
             expected_msg=msg
         )
     # Set the requested limit
-    connection_limit = sanitized_arguement['CONNECTION_LIMIT']
+    connection_limit = sanitized_arguement['connection_limit']
 arg_connlimit = " CONNECTION LIMIT {max} ".format(max=connection_limit)
 
 
@@ -206,17 +205,17 @@ clean_sql = ("BEGIN; CREATE ROLE {username} WITH {connection_limit}{createuser}"
              "{createrole}{createdb}{inherit}{login}{encrypted} PASSWORD '{password}'"
              " {inrole}{ingroup}; END;"
              ).format(
-    username=real_escape_string.sql(sanitized_arguement['ROLE']),
-    password=real_escape_string.sql(sanitized_arguement['PASSWORD']),
-    createuser=real_escape_string.sql(sanitized_arguement['CREATEUSER']),
-    createrole=real_escape_string.sql(sanitized_arguement['CREATEROLE']),
-    createdb=real_escape_string.sql(sanitized_arguement['CREATEDB']),
-    inherit=real_escape_string.sql(sanitized_arguement['INHERIT']),
-    login=real_escape_string.sql(sanitized_arguement['LOGIN']),
+    username=real_escape_string.sql(sanitized_arguement['role']),
+    password=real_escape_string.sql(sanitized_arguement['password']),
+    createuser=real_escape_string.sql(sanitized_arguement['createuser']),
+    createrole=real_escape_string.sql(sanitized_arguement['createrole']),
+    createdb=real_escape_string.sql(sanitized_arguement['createdb']),
+    inherit=real_escape_string.sql(sanitized_arguement['inherit']),
+    login=real_escape_string.sql(sanitized_arguement['login']),
     connection_limit=real_escape_string.sql(arg_connlimit),
-    encrypted=real_escape_string.sql(sanitized_arguement['ENCRYPTED']),
-    inrole=real_escape_string.sql(sanitized_arguement['ROLENAME']),
-    ingroup=real_escape_string.sql(sanitized_arguement['GROUPNAME']),
+    encrypted=real_escape_string.sql(sanitized_arguement['encrypted']),
+    inrole=real_escape_string.sql(sanitized_arguement['rolename']),
+    ingroup=real_escape_string.sql(sanitized_arguement['groupname']),
 )
 # Fail if SQL overruns 2000 bytes
 toolkit.fail_beyond_maxlength(maxlength=2000, string=clean_sql)

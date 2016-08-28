@@ -10,10 +10,9 @@
 # -- jojo --
 
 from os import linesep
-from common import MkTemp, CmdRun, ToolKit
+from common import CmdRun, ToolKit
 
 # Spawn Instances
-temp_file = MkTemp()   # <class> Do /tmp/ build/teardown
 run = CmdRun()        # <class> Run
 toolkit = ToolKit()  # <class> Misc. functions
 
@@ -56,7 +55,7 @@ for line in output.split(linesep):
         exitcode = 1  # Parse Errors should flag an API error code.
     if "pg_is_in_recovery | t" in line:
         pg_is_in_recovery = "true"
-        server_class = "SLAVE"
+        server_class = "REPLICA"
         exitcode = 0  # We good
     if "pg_is_in_recovery | f" in line:
         pg_is_in_recovery = "false"

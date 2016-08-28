@@ -58,26 +58,35 @@ class CmdRun():
         args = ""
         for k, v in ansible_opts.iteritems():
             if k == "playbook":
+                # If this is the playbook option, work this into the CLI
                 args = " {ansible} {opt} ".format(ansible=args, opt=v)
             elif k == "append_args":
-                args = " {ansible} {args} ".format(ansible=args, args=v)
+                # If this is the playbook option, work this into the CLI
+                args = " {ansible} {append_args} ".format(ansible=args, append_args=v)
             elif k == "--extra-vars":
+                # Literal quotes extra vars for proper execution
+                #  (This may need to be done for other flags)
                 args = "{ansible} {arg}='{opt}' ".format(ansible=args, arg=k, opt=v)
-            elif k.startswith('-') and v == ''
-                # If value is empty then it's a -flag or --flag switch.
+            elif k.startswith('-') and v == k:
+                # If value matches key then it's a -flag or --flag switch.
                 args = "{ansible} {switch} ".format(ansible=args, switch=v)
-            else:
+            elif v != '':
+                # If value is not empty, then set the value
                 args = "{ansible} {arg}={opt} ".format(ansible=args, arg=k, opt=v)
+            else:
+                print("Error?")
+                exit(1)
 
         command = ('/usr/bin/ansible-playbook {args}').format(args=args)
-        mktmp = MkTemp()
-
+        toolkit = ToolKit()
+        print("XXXXX")
+        print(command)
         proxyscript = ("#!/bin/bash\n\n{cmd}").format(cmd=command)
-        sh = mktmp.write(proxyscript)
+        sh = toolkit.write_temp(proxyscript)
 
         exe = "/bin/bash {tmpfname}".format(tmpfname=sh)
         result = self.run(exe)
-        mktmp.close()
+        toolkit.close()
         return result
 
     def fabric(self, fab_opts):
@@ -94,23 +103,27 @@ class CmdRun():
         """
         args = ""
         for k, v in ansible_opts.iteritems():
-            if k == "command":
+            if k == "fabricargs":
+                # If value is fabric command, set this up
                 args = " {fab} {arg1} ".format(fab=fabcmd, arg1=v)
-            elif k.startswith('-') and v == ''
-                # If value is empty then it's a -flag or --flag switch.
+            elif k.startswith('-') and v == k:
+                # If value matches key then it's a -flag or --flag switch.
                 args = "{fab} {switch} ".format(fab=fabcmd, switch=v)
+            elif v != '':
+                # If value is not empty, then set the value
+                args = "{fab} {arg}={opt} ".format(fab=args, arg=k, opt=v)
             else:
-                args = "{fab} {arg}={opt} ".format(
-                    fab=args, arg=k, opt=v)
+                print("Error?")
+                exit(1)
 
         command = ('/usr/local/bin/fab {args}').format(args=args)
-        mktmp = MkTemp()
+        toolkit = ToolKit()
         proxyscript = ("#!/bin/bash\n\n{cmd}").format(cmd=command)
-        sh = mktmp.write(proxyscript)
+        sh = toolkit.write_temp(proxyscript)
 
         exe = "/bin/bash {tmpfname}".format(tmpfname=sh)
         result = self.run(exe)
-        mktmp.close()
+        toolkit.close()
         return result
 
     def web(self, x):
@@ -155,7 +168,7 @@ class Environment():
         params = {}
         for param, value in env.iteritems():
             params[param] = value
-
+        params = dict((k.lower(), v) for k,v in params.iteritems())
         return params
 
 
@@ -216,6 +229,16 @@ class ToolKit():
         unlink(self.f)
         return exit(value)
 
+    def close(self,value=0):
+        """
+        Just close, no esit
+
+        :param value: returns
+
+        :return: exit(value)
+        """
+        unlink(self.f)
+        return value
 class Sanitize():
     """
     CLASS:  String sanitization functions for safe eval

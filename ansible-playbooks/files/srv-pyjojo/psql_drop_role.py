@@ -28,7 +28,7 @@ run = CmdRun()                    # <class> Runs the query
 # ************************************
 sanitized_arguement = {} # The actual API params we pass to psql
 
-param = "role".upper()
+param = "role"
 role = Param()
 role.value = params[param]
 role.name = param
@@ -42,7 +42,7 @@ sanitized_arguement[param] = role.get()
 # *  SQL SENTENCE  *
 # ******************
 clean_sql = ("BEGIN; DROP ROLE {rolename}; END;"
-             ).format(rolename=sanitized_arguement["ROLE"])
+             ).format(rolename=sanitized_arguement["role"])
 toolkit.fail_beyond_maxlength(maxlength=2000, string=clean_sql)
 sql_code = toolkit.write_temp(clean_sql)
 
