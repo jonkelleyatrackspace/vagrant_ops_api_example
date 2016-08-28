@@ -42,12 +42,12 @@ arguement[define_param] = {'package': p.get()} # Define as extra-vars dict item
 #  - ansible_opts['append_args'] which value should include any appendable arg like -vvvv
 ansible_opts = {}
 
-ansible_opts['playbook']            = '/opt/playbooks/ansible-playbooks/package_version.yml'
-ansible_opts['append_args']         = '-v'
-ansible_opts['--limit']             = '\"vagrant\"'
-ansible_opts['--inventory-file']    = '/opt/playbooks/ansible-hosts'
-ansible_opts['--user']              = 'vagrant'
-ansible_opts['--extra-vars']        = json.dumps(arguement['PACKAGE'])
+ansible_opts['playbook']         = '/opt/playbooks/ansible-playbooks/package_version.yml'
+ansible_opts['append_args']      = '-v'
+ansible_opts['--limit']          = '\"vagrant\"'
+ansible_opts['--inventory-file'] = '/opt/playbooks/ansible-hosts'
+ansible_opts['--user']           = 'vagrant'
+ansible_opts['--extra-vars']     = json.dumps(arguement['PACKAGE'])
 
 
 # *****************

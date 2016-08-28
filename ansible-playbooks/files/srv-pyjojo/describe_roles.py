@@ -17,14 +17,17 @@ temp_file = MkTemp()   # <class> Do /tmp/ build/teardown
 run = CmdRun()   # <class> Run
 toolkit = ToolKit()  # <class> Misc. functions
 
-# ---------------------------
-# --- Define SQL Sentence ---
-# This formats the SQL verbs into a complete query sentence.
+
+# ******************
+# *  SQL SENTENCE  *
+# ******************
 sql = ("\du")
 sql_code = temp_file.write(sql)
 
-# ---------------
-# --- Run SQL ---
+
+# ****************
+# *  SQL RUNNER  *
+# ****************
 output = run.sql(sql_code)
 print(output)
 print("jojo_return_value execution_status=ok")

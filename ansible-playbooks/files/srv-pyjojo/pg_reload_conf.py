@@ -14,23 +14,27 @@ from common import MkTemp, CmdRun, ToolKit
 
 # Spawn Instances
 temp_file = MkTemp()   # <class> Do /tmp/ build/teardown
-run = CmdRun()   # <class> Run
+run = CmdRun()        # <class> Run
 toolkit = ToolKit()  # <class> Misc. functions
 
-# ---------------------------
-# --- Define SQL Sentence ---
-# This formats the SQL verbs into a complete query sentence.
+
+# ******************
+# *  SQL SENTENCE  *
+# ******************
 sql = ("BEGIN; select pg_reload_conf(); COMMIT;")
 sql_code = temp_file.write(sql)
 
-# ---------------
-# --- Run SQL ---
-query_result = run.sql(sql_code)
-print(query_result)
 
-# -----------------------
-# --- OUTPUT FILTER ---
-# Report back intelligible errors to the user.
+# ****************
+# *  SQL RUNNER  *
+# ****************
+query_result = run.sql(sql_code)
+
+
+# **********************
+# *  OUTPUT PROCESSOR  *
+# **********************
+print(query_result)
 exitcode = 0  # We good
 error_scenario_1 = False
 error_scenario_2 = False
@@ -40,15 +44,15 @@ for line in query_result.split(linesep):
     if (line == "ROLLBACK") or ("transaction is aborted, commands ignored" in line):
         toolkit.print_stderr(line)
         error_scenario_1 = True
-        exitcode = 1  # Rollbacks should flag an API error code.
+        exitcode         = 1  # Rollbacks should flag an API error code.
     if ("psql:/tmp/" in line) and (" ERROR:  " in line):
         toolkit.print_stderr(line)
         error_scenario_2 = True
-        exitcode = 1  # Parse Errors should flag an API error code.
+        exitcode         = 1  # Parse Errors should flag an API error code.
     if " FATAL: " in line:
         toolkit.print_stderr(line)
         error_scenario_3 = True
-        exitcode = 1  # Parse Errors should flag an API error code.
+        exitcode         = 1  # Parse Errors should flag an API error code.
 
 # Report Output
 if exitcode == 0:

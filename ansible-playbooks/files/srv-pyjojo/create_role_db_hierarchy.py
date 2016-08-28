@@ -17,87 +17,107 @@
 # -- jojo --
 
 from os import linesep
-from common import MkTemp, Sanitize, CmdRun, Environment
-from common import ToolKit, Constants, ParamHandle
+from common import MkTemp, Sanitize, CmdRun
+from common import ToolKit, Constants, ParamHandle2
 
 # Spawn Instances
-parameter = ParamHandle()     # <class> Parameter manipulation
-real_escape_string = Sanitize()  # <class> Escape Routines
-toolkit = ToolKit()           # <class> Misc. functions
-environment = Environment()    # <class> Manages Env Vars
-temp_file = MkTemp()           # <class> Do /tmp/ build/teardown
-params = parameter.get()       # <dict>  Input params
-run = CmdRun()                # <class> Runs the query
+parameter     = ParamHandle2()    # <class> Parameter manipulation
+real_escape_string = Sanitize()   # <class> Escape Routines
+toolkit       = ToolKit()         # <class> Misc. functions
+temp_file     = MkTemp()          # <class> Do /tmp/ build/teardown
+params        = parameter.list()  # <dict>  Input params list
+run           = CmdRun()          # <class> Runs the query
 
-# ----------------------------------
-# --- Define Required Parameters ---
-# This should be a list of required params from the API handoff.
-parameter.require_to_run(
-    parameters=['APPLICATION', 'SUPER_PASSWORD', 'SVC_PASSWORD'], params=params)
 
-# -------------------------
-# --- Bounds Validation ---
-err = "less then 63 bytes for input"
-param = params['APPLICATION']
-if len(param) > Constants.POSTGRES_NAMEDATA_LEN:
-    parameter.raise_error(keyname='APPLICATION', value=param, expected_msg=err)
+# ************************************
+# *  DEFINE PARAMETERS AND VALIDATE  *
+# ************************************
+sanitized_arguement = {}
 
-param = params['SUPER_PASSWORD']
-if len(param) > Constants.POSTGRES_NAMEDATA_LEN:
-    parameter.raise_error(keyname='SUPER_PASSWORD',
-                          value=param, expected_msg=err)
+define_param = "APPLICATION"
+p            = ParamHandle2()
+p.value      = params[define_param]
+p.name       = define_param
+p.max_length = Constants.POSTGRES_NAMEDATA_LEN
+p.require    = True
+p.sanitizier = "sql"
+sanitized_arguement[define_param] = p.get()
 
-param = params['SVC_PASSWORD']
-if len(param) > Constants.POSTGRES_NAMEDATA_LEN:
-    parameter.raise_error(keyname='SUPER_PASSWORD',
-                          value=param, expected_msg=err)
+define_param = "SUPER_PASSWORD"
+p            = ParamHandle2()
+p.value      = params[define_param]
+p.name       = define_param
+p.max_length = Constants.POSTGRES_NAMEDATA_LEN
+p.require    = True
+p.sanitizier = "sql"
+sanitized_arguement[define_param] = p.get()
 
-# -----------------------
-# --- Parameter Logic ---
-# Perform basic logic parse on params and build the SQL query verbs.
 
-param = params['APPLICATION']
-arg_role_application = param
+define_param = "SVC_PASSWORD"
+p            = ParamHandle2()
+p.value      = params[define_param]
+p.name       = define_param
+p.max_length = Constants.POSTGRES_NAMEDATA_LEN
+p.require    = True
+p.sanitizier = "sql"
+sanitized_arguement[define_param] = p.get()
 
-param = params['SUPER_PASSWORD']
-arg_super_password = param
+define_param = "SUPER_SVC_LOGIN"
+p            = ParamHandle2()
+p.value      = params[define_param]
+p.name       = define_param
+p.max_length = Constants.POSTGRES_NAMEDATA_LEN
+p.sanitizier = "sql"
+sanitized_arguement[define_param] = p.get()
 
-param = params['SVC_PASSWORD']
-arg_svc_password = param
+define_param = "SUPER_SVC_LOGIN"
+sql_when_true  = " LOGIN ".format(verb=define_param)
+sql_when_false = " NOLOGIN ".format(verb=define_param)
+p            = ParamHandle2()
+p.value      = params[define_param]
+p.name       = define_param
+p.max_length = Constants.POSTGRES_NAMEDATA_LEN
+p.sanitizier = "sql"
+p.convert_to_bool(sql_when_true,sql_when_false,sql_when_false)
+sanitized_arguement[define_param] = p.get()
 
-param = params['SUPER_SVC_LOGIN']
-arg_super_login = parameter.return_if_true(
-    param=param,
-    return_if=" LOGIN ".format(verb=param),
-    return_else=" NOLOGIN ".format(verb=param),
-    return_nomatch=" LOGIN ".format(verb=param)
-)
+define_param = "SUPER_MAXSOCK"
+val_when_nil = " 3 "
+val_when_not = " {x} ".format(x=params[define_param])
+p            = ParamHandle2()
+p.value      = params[define_param]
+p.name       = define_param
+p.max_length = Constants.POSTGRES_NAMEDATA_LEN
+p.sanitizier = "sql"
+p.set_value_if_undefined(custom_if_value=val_when_nil, custom_else_value=val_when_not)
+sanitized_arguement[define_param] = p.get()
 
-param = params['SUPER_MAXSOCK']
-arg_super_maxsock = parameter.return_if_nil(
-    param=param,
-    return_if=" 3 ",  # Default 3 sockets for super user
-    return_else=" {x} ".format(x=param)
-)
+define_param = "SVC_LOGIN"
+sql_when_true  = " LOGIN ".format(verb=define_param)
+sql_when_false = " NOLOGIN ".format(verb=define_param)
+p            = ParamHandle2()
+p.value      = params[define_param]
+p.name       = define_param
+p.max_length = Constants.POSTGRES_NAMEDATA_LEN
+p.sanitizier = "sql"
+p.convert_to_bool(sql_when_true,sql_when_false,sql_when_false)
+sanitized_arguement[define_param] = p.get()
 
-param = params['SVC_LOGIN']
-arg_svc_login = parameter.return_if_true(
-    param=param,
-    return_if=" LOGIN ",
-    return_else=" NOLOGIN ",
-    return_nomatch=" LOGIN "
-)
+define_param = "SVC_MAXSOCK"
+val_when_nil = " 2 "
+val_when_not = " {x} ".format(x=params[define_param])
+p            = ParamHandle2()
+p.value      = params[define_param]
+p.name       = define_param
+p.max_length = Constants.POSTGRES_NAMEDATA_LEN
+p.sanitizier = "sql"
+p.set_value_if_undefined(custom_if_value=val_when_nil, custom_else_value=val_when_not)
+sanitized_arguement[define_param] = p.get()
 
-param = params['SVC_MAXSOCK']
-arg_svc_maxsock = parameter.return_if_nil(
-    param=param,
-    return_if=" 2 ",  # Default 2 sockets for svc user
-    return_else=" {x} ".format(x=param)
-)
 
-# ---------------------------
-# --- Define SQL Sentence ---
-# This formats the SQL verbs into a complete query sentence.
+# ******************
+# *  SQL SENTENCE  *
+# ******************
 clean_sql = (
     "\echo on\n"
     "BEGIN;\n"
@@ -123,30 +143,28 @@ clean_sql = (
     "    IN ROLE  {myapplication}_role;\n"
     "COMMIT;\n"
 ).format(
-    myapplication=real_escape_string.sql(arg_role_application),
-    super_password=real_escape_string.sql(arg_super_password),
-    super_login=real_escape_string.sql(arg_super_login),
-    super_maxsock=real_escape_string.sql(arg_super_maxsock),
-    svc_login=real_escape_string.sql(arg_svc_login),
-    svc_maxsock=real_escape_string.sql(arg_svc_maxsock),
-    svc_password=real_escape_string.sql(arg_svc_password)
+    myapplication=sanitized_arguement['APPLICATION'],
+    super_password=sanitized_arguement['SUPER_PASSWORD'],
+    super_login=sanitized_arguement['SUPER_SVC_LOGIN'],
+    super_maxsock=sanitized_arguement['SUPER_MAXSOCK'],
+    svc_login=sanitized_arguement['SVC_LOGIN'],
+    svc_maxsock=sanitized_arguement['SVC_MAXSOCK'],
+    svc_password=sanitized_arguement['SVC_PASSWORD']
 )
-
-# ---------------
-# --- Run SQL ---
 toolkit.fail_beyond_maxlength(maxlength=1500, string=clean_sql)
 sql_code = temp_file.write(clean_sql)
 
-# ---------------
-# --- Run SQL ---
-# main.set_command_mode.sql(sql_code)  #TODO config class to pull prefs
-# for command formattting
-output = run.sql(sql_code)
-print(output)
 
-# -----------------------
-# --- OUTPUT FILTER ---
-# Report back intelligible errors to the user.
+# ****************
+# *  SQL RUNNER  *
+# ****************
+output = run.sql(sql_code)
+
+
+# **********************
+# *  OUTPUT PROCESSOR  *
+# **********************
+print(output)
 exitcode = 0
 error_scenario_1 = False
 error_scenario_2 = False
@@ -159,23 +177,23 @@ for line in output.split(linesep):
     if ("ERROR:" in line) and (" role " in line) and ("already exists" in line):
         toolkit.print_stderr(line)
         error_scenario_1 = True
-        exitcode = 1  # Parse Errors should flag an API error code.
+        exitcode         = 1  # Parse Errors should flag an API error code.
     if ("ERROR:" in line) and (" database " in line) and ("already exists" in line):
         toolkit.print_stderr(line)
         error_scenario_2 = True
-        exitcode = 1  # Parse Errors should flag an API error code.
+        exitcode         = 1  # Parse Errors should flag an API error code.
     if (line == "ROLLBACK") or ("transaction is aborted, commands ignored" in line):
         toolkit.print_stderr(line)
         error_scenario_3 = True
-        exitcode = 1  # Rollbacks should flag an API error code.
+        exitcode         = 1  # Rollbacks should flag an API error code.
     if ("psql:/tmp/" in line) and (" ERROR:  " in line):
         toolkit.print_stderr(line)
         error_scenario_4 = True
-        exitcode = 1  # Parse Errors should flag an API error code.
+        exitcode         = 1  # Parse Errors should flag an API error code.
     if " FATAL: " in line:
         toolkit.print_stderr(line)
         error_scenario_5 = True
-        exitcode = 1  # Parse Errors should flag an API error code.
+        exitcode         = 1  # Parse Errors should flag an API error code.
 
 # Report Output
 if exitcode == 0:
