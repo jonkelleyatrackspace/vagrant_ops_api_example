@@ -3,15 +3,15 @@
 # Copyright 2016, Jonathan Kelley  
 # License Apache Commons v2 
 
-from __future__ import print_function        # for print_stderr
-from sys import stderr                       # for print_stderr
-from os import environ as env                # for paramaters
-from os import chmod, chown, unlink          # for tempfile
-from tempfile import NamedTemporaryFile      # for tempfile
-from pwd import getpwnam                     # for tempfile
-from subprocess import Popen, PIPE, STDOUT   # for command runs
-from pwd import getpwnam                     # for tempfile
-import re as regex                           # for eval sanitize
+from __future__ import print_function      # for print_stderr
+from sys import stderr                     # for print_stderr
+from os import environ as env              # for paramaters
+from os import chmod, chown, unlink        # for tempfile
+from tempfile import NamedTemporaryFile    # for tempfile
+from pwd import getpwnam                   # for tempfile
+from subprocess import Popen, PIPE, STDOUT # for command runs
+from pwd import getpwnam                   # for tempfile
+import re as regex                         # for eval sanitize
 
 class CmdRun():
     """
@@ -111,22 +111,17 @@ class Constants():
 class Environment():
     """
     CLASS: Manages environment properties.
+    # THIS CLASS WILL GO AWAY WITH PARAM2 
     """
 
-    def params(self, sanitizer):
+    def params(self):
         """
         Returns json params from parent environment
 
         """
-        sanitize = Sanitize()
         params = {}
         for param, value in env.iteritems():
-            if not sanitizer:
                 params[param] = value
-            elif sanitizer == "sql":
-                params[param] = Sanitize.sql(value)
-            elif sanitizer == "nonalphanumeric":
-                params[param] = Sanitize.non_alphanumeric_text(value)
 
         return params
 
@@ -342,18 +337,60 @@ class ParamHandle2():
            as well as helping with params, such as ensuring required 
            env params exist, or that they are not '' (nil)
     """
-    
+    name       = ""    # This should be set to the key name of a param
+    value      = ""    # This should be set to the value of a param
+    max_length = -1    # This should be set to a maximum parameter length
+    require    = False # This should be set to true to fail if inputy is detected
+    sanitizer  = None  # This should be set to the type of sanitizer you wish to use
+                       # this will be used to return a sanitized string.
+    isbool     = "N0"  # Special marker to determine if a isbool is used.
+                       # if this value isn't N0 it is assumed to be True/False
+                       #  or an overriden setting.
+
     def __init__(self):
         self.err = ToolKit()
-        self.env = Environment()
 
-    def get(self, sanitizer=None):
+    def list(self):
         """
         This will return a dictionary of environment variables.
         It will first pass the strings through a sanitizer, which if 
         given the correct options will sanitize the string.
         """
-        return self.env.params(sanitizer)
+
+        env = Environment()
+        return env.params()
+
+    def get(self):
+        """
+        This will return a dictionary of environment variables.
+        It will first pass the strings through a sanitizer, which if 
+        given the correct options will sanitize the string.
+        """
+        if self.value == "":
+            raise_error(keyname=self.name, value=self.value, expected_msg="ARG CLASS MISSING VALUE")
+        if self.name == "":
+            raise_error(keyname=self.name, value=self.value, expected_msg="ARG CLASS MISSING NAME")
+        if self.require:
+            self.fail_if_nil(self.name, self.value)
+        if self.max_length > 1:
+            if len(self.value) > self.max_length:
+                msg = "< {max}".format(max=self.max_length)
+                raise_error(keyname=self.name, value=self.value, expected_msg=msg)
+
+        sanitize = Sanitize()
+        if not self.sanitizer:
+            sanitizedparam = self.value
+        elif self.sanitizer == "sql":
+            sanitizedparam = Sanitize.sql(self.value)
+        elif self.sanitizer == "nonalphanumeric":
+            sanitizedparam = Sanitize.non_alphanumeric_text(self.value)
+
+        if self.isbool != "N0":
+            # We can't use False or None since those might be used
+            #  by the user.
+            sanitizedparam = self.isbool
+
+        return sanitizedparam
 
     def is_nil(self, param):
         """
@@ -377,99 +414,62 @@ class ParamHandle2():
         else:
             return False
 
-    def require_to_run(self, parameters=[], params={}):
-        """
-        Used during pre-flight check.
-        Used to check an env dict for parameters that
-        were supplied empty to the user. Exit if found.
-
-        :parameters: is a list of your required parameters
-        :params: is the paramHandle.get() function, a dict
-        """
-        nil_params = []
-        for param, value in params.iteritems():
-            if param in parameters and self.is_nil(value):
-                nil_params.append(param)
-
-        if len(nil_params) > 1:
-            print("jojo_return_value missing_params={bad_params}".format(
-                bad_params=nil_params))
-            print("jojo_return_value error_reason_indicator=EXPECTED_PARAMETER_IS_NULL")
-            self.err.print_stderr("Multiple Required Parameters: `{bad_params}` were not provided in JSON contract. Please set required values.".format(
-                bad_params=nil_params))
-            exit(1)
-        elif len(nil_params) > 0:
-            print("jojo_return_value missing_params={bad_param}".format(
-                bad_param=nil_params))
-            print("jojo_return_value error_reason_indicator=EXPECTED_PARAMETER_IS_NULL")
-            self.err.print_stderr("Required Parameter: `{bad_param}` was not provided in JSON contract. Please set required value.".format(
-                bad_param=nil_params))
-            exit(1)
-
     def fail_if_nil(self, keyname, value):
         """
         Causes an error message then exits, used when a parameter is nil.
         """
         if self.is_nil(value):
-            print("jojo_return_value error_reason_indicator=EXPECTED_PARAMETER_IS_NULL")
+            print("jojo_return_value error_reason_indicator=UNDEFINED_INPUT_ERROR")
             self.err.print_stderr(
-                "Parameter `{name}` provided with value: \'\' (nil), expected a value.".format(name=keyname))
-            exit(1)
+                "Parameter `{name}` provided with value: <NULL> which cannot be undefined".format(name=keyname))
+            exit(500)
 
     def raise_error(self, keyname, value, expected_msg):
         """
         Causes an error message then exits, used when a parameter is invalid.
         """
-        print("jojo_return_value error_reason_indicator=EXPECTED_PARAMETER_INPUT")
+        print("jojo_return_value error_reason_indicator=UNEXPECTED_PARAMETER_INPUT")
         self.err.print_stderr("Parameter `{key}` provided with value: {param}, expected: {expect} value.".format(
             key=keyname, expect=expected_msg, param=value))
-        exit(1)
+        exit(500)
 
-    def return_if_not_nil(self, param, return_if=True, return_else=False):
+    def set_value_if_defined(self, custom_if_value=True, custom_else_value=False):
         """
-        Returns return_if if input is nil. Else returns return_else.
+        Returns return_if value is defined. Else returns return_else.
         Used for parameter processing.
         """
-        if not self.is_nil(param):
-            return return_if
+        if not self.is_nil(self.value):
+            self.isbool = custom_if_value
         else:
-            return return_else
+            self.isbool = custom_else_value
 
-    def return_if_nil(self, param, return_if=True, return_else=False):
+    def set_value_if_undefined(self, custom_if_value=True, custom_else_value=False):
         """
-        Returns return_if if input is nil. Else returns return_else.
+        Returns custom_if_value if input is nil. Else returns custom_else_value.
         Used for parameter processing.
-        """
-        if self.is_nil(param):
-            return return_if
-        else:
-            return return_else
 
-    def return_if_true(self, param, return_if=True, return_else=False, return_nomatch=False):
+        returns True if defined, False if not
         """
-        Returns return_if if input is True. Else returns return_else.
-        return_nomatch returns if it is neither true nor false.
-        Used for parameter processing.
-        """
-        if param.lower().startswith('t') or param == "1" or param.lower().startswith('y'):
-            return return_if
-        elif param.lower().startswith('f') or param == "0" or param.lower().startswith('n'):
-            return return_else
+        if self.is_nil(self.value):
+            self.isbool = custom_if_value
         else:
-            return return_nomatch
+            self.isbool = custom_else_value
 
-    def return_if_false(self, param, return_if=True, return_else=False, return_nomatch=False):
+    def convert_to_bool(self, custom_whentrue_value=True, custom_whenfalse_value=False, custom_badinput_value=False):
         """
-        Returns return_if if input is False. Else returns return_else.
-        return_nomatch returns if it is neither true nor false.
+        Returns as a boolean True if a string approximates a true, and
+        a boolean False if a string approximates a false.
+        custom_badinput_value returns if it is neither true nor False.
         Used for parameter processing.
+
+        returns True if a string is like a boolean true, False if not
         """
-        if param.lower().startswith('f') or param == "0" or param.lower().startswith('y'):
-            return return_if
-        elif param.lower().startswith('t') or param == "1" or param.lower().startswith('n'):
-            return return_else
+        if self.value.lower().startswith('t') or self.value == "1" or self.value.lower().startswith('y'):
+            self.isbool = custom_whentrue_value  
+        elif self.value.lower().startswith('f') or self.value == "0" or self.value.lower().startswith('n'):
+            self.isbool = custom_whenfalse_value
         else:
-            return return_nomatch
+            self.isbool = custom_badinput_value
 
 if __name__ == "__main__":
     # Just quit.
@@ -502,3 +502,4 @@ if __name__ == "__main__":
     # See scripts
     # curl -XGET http://localhost:3000/scripts/ -H "Content-Type:
     # application/json" | python -m json.tool
+
