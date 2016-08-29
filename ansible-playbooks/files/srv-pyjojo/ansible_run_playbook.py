@@ -19,10 +19,10 @@
 # param: list_tags - When true, list all available tags
 # param: list_hosts - When true, outputs a list of matching hosts; does not execute
 # param: new_vault_password - New vault password file for rekey
-# param: output - output file name for encrypt or decrypt; use - for stdout
+# param: output - output file name for encrypt or decrypt; use '—' for stdout
 # param: skip_tags - Only run plays and tasks whose tags do not match these
 # param: vault_password_file - Vault password file
-# param: verbose - When true, verbose mode, when any other value set -vvvv (debug)
+# param: verbose - When true, verbose mode, when any other value set ——vvvv (debug)
 # param: version -  When true, show program's version number and exit
 # param: ask_pass -  When true, ask for connection password
 # param: private_key -  Use this file to authenticate the connection
