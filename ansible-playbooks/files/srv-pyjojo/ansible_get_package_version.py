@@ -10,7 +10,7 @@
 # -- jojo --
 
 from common import CmdRun, Constants
-from common import ParamHandle2 as Param
+from common import ParamHandle as Param
 from json import dumps as decode
 
 # Spawn Instances

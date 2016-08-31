@@ -22,7 +22,7 @@
 from os import linesep
 from common import Sanitize, CmdRun
 from common import ToolKit, Constants
-from common import ParamHandle2 as Param
+from common import ParamHandle as Param
 
 # Spawn Instances
 p = Param()                       # <class> Parameter manipulation
