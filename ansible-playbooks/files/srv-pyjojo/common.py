@@ -239,11 +239,42 @@ class ToolKit():
         """
         unlink(self.f)
         return value
+
 class Sanitize():
     """
     CLASS:  String sanitization functions for safe eval
             You put a string in, get  a string out.
     """
+
+    def __init__(self):
+        self.err = ToolKit()
+
+    def terminate_suspicious_input(self, testtext):
+        """
+        At least every Sanitize() method should run the data through here
+        before passing subprocess. This routine is specialized to detect
+        the patterns of escapes seen by pipes.quote (shlex.quote in Python 3)
+        when doing various types of control character injection.
+
+        If one pair (or more) of escape sequences is detected
+        this request will fail.
+        """
+        # This will count the number of escape sequences attempted and then 
+        #  promplty throw an exception.
+        # TODO Audit logging for this sort of event?
+        begin_escape_seqs = len(tuple(regex.finditer(r"''\"'\"'", testtext)))
+        end_escape_seqs = len(tuple(regex.finditer(r"'\"'\"''", testtext)))
+        escape_sequences_count = begin_escape_seqs + end_escape_seqs
+        if escape_sequences_count > 0:
+            # We're getting escape sequences
+            #  This user may be fuzzing the API so 
+            #   quietly exit stage right
+            #    -->
+            print("jojo_return_value execution_status=500")
+            self.err.print_stderr("An internal error has occurred.")
+            exit(254)
+        else:
+            return 0
 
     def non_alphanumeric_text(self, varied_input):
         """
@@ -252,34 +283,28 @@ class Sanitize():
 
         :param your_string: The string you wish to escape.
         """
+        self.terminate_suspicious_input(varied_input)
         return regex.sub(r'\W+', '', varied_input)
 
     def sql(self, sql):
         """
-        Ported from php-7.0.9/ext/mysqli/tests/mysqli_real_escape_string.phpt
-
-        It escapes statement, terminators, escapes, newlines, returns, quotes for 
-        sanitization. Nullchars will error before here, but makes those safe too,
-        because the DB can't use them.
-
-        :param sql: The string you wish to escape.
+        Place holder for SQL sanitizer. This is well handled by the 
+        pipes.quote / shlex.quote library it seems and the tamper detection.
         """
-        # SELECT * FR; DROP DATABASE POSTGRES to SELECT * FR\; DROP DATABASE
-        # POSTGRES
-        escaped = regex.sub(r';', '\\\\;', sql)
-        # фу\\бар to фу\\\\бар (Escape escapes)
-        escaped = regex.sub(r'[\\\\]', '\\\\\\\\', escaped)
-        # 阿卜拉\n轻 to 阿卜拉\\n轻 (Escape newline)
-        escaped = regex.sub(r'\n', '\\\\n', escaped)
-        # 张明安\r在 to 张明安\\r在 (Escape return)
-        escaped = regex.sub(r'\r', '\\\\r', escaped)
-        # бар"фус to бар\"фус
-        escaped = regex.sub(r'\"', '\\"', escaped)
-        # лала'лали to лала\'лали
-        escaped = regex.sub(r'\'', '\\\\\'', escaped)
-        # replace nullchar
-        escaped = regex.sub(r'\0', '<NULL>', escaped)
-        return escaped
+        fail = 0
+        errmessage = ""
+        self.terminate_suspicious_input(sql)
+
+        if len(tuple(regex.finditer(r"%", sql))):
+            fail = 240
+            errmessage = "Patterns are not allowed in parameters"
+
+        if fail > 0:
+            print("jojo_return_value execution_status=500")
+            self.err.print_stderr(errmessage)
+            exit(fail)
+
+        return sql
 
 
 class ParamHandle():
@@ -469,9 +494,10 @@ class ParamHandle2():
             self.fail_if_nil(self.name, self.value)
         if self.max_length > 1:
             if len(self.value) > self.max_length:
-                msg = "less than {max} characters".format(max=self.max_length)
+                msg = "input less than {max} bytes".format(max=self.max_length)
                 self.raise_error(keyname=self.name,
-                                 value=self.value, expected_msg=msg)
+                                 value='too large', expected_msg=msg,
+                                 error_reason_indi="BUFFER_OUT_OF_SPACE")
 
         # Check for overrides that will return a default value if the input is
         # nil.
@@ -529,11 +555,11 @@ class ParamHandle2():
                 "Parameter `{name}` provided with value: <NULL> which cannot be undefined".format(name=keyname))
             exit(500)
 
-    def raise_error(self, keyname, value, expected_msg):
+    def raise_error(self, keyname, value, expected_msg, error_reason_indi="UNEXPECTED_PARAMETER_INPUT"):
         """
         Causes an error message then exits, used when a parameter is invalid.
         """
-        print("jojo_return_value error_reason_indicator=UNEXPECTED_PARAMETER_INPUT")
+        print("jojo_return_value error_reason_indicator={indicator}".format(indicator=error_reason_indi))
         self.err.print_stderr("Parameter `{key}` provided with value: {param}, expected: {expect} value.".format(
             key=keyname, expect=expected_msg, param=value))
         exit(500)
